@@ -1,0 +1,44 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "D:/importante/Agropelink_claude/backend/.venv/Scripts/python.exe",
+      "runtimeArgs": [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--port",
+        "8000",
+        "--reload"
+      ],
+      "cwd": "D:/importante/Agropelink_claude/backend",
+      "port": 8000
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "E:/App/node/node.exe",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "cwd": "D:/importante/Agropelink_claude/frontend",
+      "port": 5173
+    },
+    {
+      "name": "frontend-preview",
+      "runtimeExecutable": "E:/App/node/node.exe",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "preview",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "cwd": "D:/importante/Agropelink_claude/frontend",
+      "port": 5173
+    }
+  ]
+}

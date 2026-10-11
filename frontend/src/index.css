@@ -1,0 +1,336 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html.force-motion {
+    scroll-behavior: smooth;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Tipografía: titulares equilibrados y párrafos sin viudas. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p,
+  li,
+  figcaption {
+    text-wrap: pretty;
+  }
+}
+
+@layer components {
+  /* ---------- Halos decorativos: degradado radial en lugar de `blur` (cero coste de filtro) ---------- */
+  .glow-secondary {
+    background: radial-gradient(closest-side, rgb(45 181 154 / 0.22), transparent);
+  }
+  .glow-primary {
+    background: radial-gradient(closest-side, rgb(91 173 94 / 0.18), transparent);
+  }
+
+  /* ---------- Tarjeta "cristal" del panel: borde translúcido + degradado ligero + sombra difusa ----------
+     Sin backdrop-filter: el aspecto de vidrio se consigue con capas pintadas una sola vez. */
+  .card-glass {
+    @apply rounded-2xl border border-white/[0.08] shadow-surface;
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.015) 60%);
+    background-color: rgb(15 23 26 / 0.55);
+  }
+
+  /* ---------- Superficies (sombras multicapa en lugar de bordes de relleno) ---------- */
+  .surface {
+    @apply rounded-3xl bg-slate-900/60 shadow-surface;
+  }
+
+  /* Tarjeta interactiva: eleva con sombra y 2px de desplazamiento, nunca con `transition: all`. */
+  .surface-interactive {
+    @apply rounded-3xl bg-white/[0.025] shadow-surface transition-[box-shadow,transform,background-color] duration-300 ease-out hover:-translate-y-0.5 hover:bg-white/[0.04] hover:shadow-surface-hover;
+  }
+
+  /* ---------- Botones: hover con escala 1.02 + resplandor; press a 0.96 (feedback táctil) ---------- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary-500 to-secondary-500 font-semibold text-slate-950 shadow-glow transition-[transform,box-shadow,filter] duration-200 ease-out hover:scale-[1.02] hover:shadow-glow-hover hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 active:scale-[0.96] active:duration-100 disabled:pointer-events-none disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.04] font-semibold text-white shadow-surface-sm transition-[transform,box-shadow,background-color] duration-200 ease-out hover:scale-[1.02] hover:bg-white/[0.08] hover:shadow-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 active:scale-[0.96] active:duration-100;
+  }
+
+  /* ---------- Campos: foco "elástico" (el halo crece) y error con anillo cálido ---------- */
+  .field {
+    @apply block w-full rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-white shadow-surface-sm outline-none transition-[box-shadow,background-color] duration-200 ease-out-expo placeholder:text-slate-500 hover:bg-white/[0.06] focus:bg-white/[0.07] focus:shadow-focus-ring aria-[invalid=true]:shadow-error-ring;
+  }
+
+  .field-error {
+    animation: error-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+
+  /* ---------- Skeleton: barrido de luz suave en vez de parpadeo de opacidad ---------- */
+  .skeleton {
+    background-color: rgb(255 255 255 / 0.03);
+    background-image: linear-gradient(100deg, transparent 20%, rgb(255 255 255 / 0.055) 50%, transparent 80%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeleton-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  /* Entrada de capas flotantes (menús, banner, popovers): escala 0.96 → 1 desde su origen. */
+  .pop-in {
+    animation: pop-in 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+
+  /* Contenido que cambia (pestañas, filtros): fundido corto, sin desplazamientos largos. */
+  .swap-in {
+    animation: swap-in 260ms cubic-bezier(0.2, 0, 0, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.force-motion) .skeleton,
+  html:not(.force-motion) .pop-in,
+  html:not(.force-motion) .swap-in,
+  html:not(.force-motion) .field-error {
+    animation: none;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* scaleX en lugar de width: se compone en GPU, sin layout ni repintado por frame. */
+@keyframes carousel-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes error-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Modal nativo <dialog>: entrada y salida suaves del panel y del fondo. */
+dialog.dialog-animated[open] {
+  animation: dialog-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+dialog.dialog-animated[open]::backdrop {
+  animation: backdrop-in 240ms ease-out both;
+}
+dialog.dialog-animated[data-closing] {
+  animation: dialog-out 160ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+dialog.dialog-animated[data-closing]::backdrop {
+  animation: backdrop-out 160ms ease-out both;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.force-motion) dialog.dialog-animated[open],
+  html:not(.force-motion) dialog.dialog-animated[open]::backdrop,
+  html:not(.force-motion) dialog.dialog-animated[data-closing],
+  html:not(.force-motion) dialog.dialog-animated[data-closing]::backdrop {
+    animation: none;
+  }
+}
+
+/* ===================== Fondo "Emerald & Cyan Wave" (FluidBackground.jsx) =====================
+   Optimizado: 2 capas animadas solo con translate3d, sin filter ni backdrop-filter. */
+.fluid-bg {
+  contain: strict;
+}
+
+/* Focos de luz ESTÁTICOS: el difuminado lo da el propio degradado radial (se pinta una vez). */
+.fluid-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(55vmax 45vmax at 8% 4%, rgb(16 185 129 / 0.28), transparent 70%),
+    radial-gradient(50vmax 42vmax at 96% 38%, rgb(6 182 212 / 0.24), transparent 70%),
+    radial-gradient(48vmax 36vmax at 40% 108%, rgb(13 148 136 / 0.26), transparent 70%);
+}
+
+/* Ondas: SVG de 200 % de ancho; un solo keyframe combina flujo horizontal y oleaje vertical. */
+.fluid-wave {
+  position: absolute;
+  left: 0;
+  width: 200%;
+  will-change: transform; /* únicos 2 elementos con will-change del fondo */
+}
+
+.fluid-wave--cyan {
+  bottom: 9vh;
+  height: 32vh;
+  opacity: 0.4;
+  animation: wave-drift-a 14s linear infinite;
+}
+
+.fluid-wave--emerald {
+  bottom: -2vh;
+  height: 30vh;
+  opacity: 0.5;
+  animation: wave-drift-b 11s linear infinite;
+}
+
+/* -50 % del ancho = un tramo completo (bucle sin saltos); el vaivén vertical vuelve a 0 al final. */
+@keyframes wave-drift-a {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-12.5%, -1.6vh, 0);
+  }
+  50% {
+    transform: translate3d(-25%, 0, 0);
+  }
+  75% {
+    transform: translate3d(-37.5%, 1.6vh, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+/* Sentido contrario y fase distinta para dar profundidad. */
+@keyframes wave-drift-b {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  25% {
+    transform: translate3d(-37.5%, 1.4vh, 0);
+  }
+  50% {
+    transform: translate3d(-25%, 0, 0);
+  }
+  75% {
+    transform: translate3d(-12.5%, -1.4vh, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.fluid-bg[data-paused] .fluid-wave {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.force-motion) .fluid-wave {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+/* ---------- Lenis (smooth scrolling): estilos mínimos recomendados por la librería ---------- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ---------- Panel: halo de marca estático en la cabecera (degradados pintados una vez, sin filtros) ---------- */
+.panel-halo {
+  background:
+    radial-gradient(40rem 20rem at 15% -10%, rgb(91 173 94 / 0.12), transparent 70%),
+    radial-gradient(36rem 18rem at 85% -5%, rgb(45 181 154 / 0.12), transparent 70%);
+}

@@ -1,0 +1,81 @@
+{
+  "_doc": [
+    "Diccionario de moderación del foro (español peninsular). Se compila al arrancar en utils/moderation.py.",
+    "Todo se escribe en minúsculas y sin tildes (la ñ se conserva: coño ≠ cono); el texto analizado se normaliza igual (tildes, leet speak, letras repetidas, separadores).",
+    "Sintaxis de cada término:",
+    "  'puta'      → variantes de género y número: puta, puto, putas, putos (sufijo o/a + s).",
+    "  'paleto='   → palabra exacta + plural (paletos), sin cambio de género (evita 'paleta' = pallet).",
+    "  'gilipoll*' → raíz: cualquier terminación (gilipollas, gilipollez, gilipollo…).",
+    "  frases      → coincidencia exacta de la frase completa (sin variantes).",
+    "Siempre con límites de palabra: 'puta' no bloquea 'disputa', 'computadora' ni 'imputado'.",
+    "severity: 'mild' → mensaje bloqueado + advertencia oficial; 'severe' → bloqueo inmediato de la cuenta."
+  ],
+  "categories": {
+    "odio": {
+      "label": "discurso de odio",
+      "severity": "severe",
+      "terms": [
+        "maricon", "maricona", "marica=", "bollera=", "tortillera=", "travelo", "sidoso",
+        "sudaca", "negrata", "panchito", "subhumano",
+        "moro de mierda", "moros de mierda", "puto moro", "putos moros", "puta mora",
+        "puto negro", "putos negros", "negro de mierda", "negros de mierda",
+        "gitano de mierda", "gitanos de mierda", "judio de mierda", "judios de mierda",
+        "sudaca de mierda", "raza inferior", "heil hitler", "sieg heil", "hay que exterminar",
+        "a la camara de gas"
+      ]
+    },
+    "amenazas": {
+      "label": "amenazas",
+      "severity": "severe",
+      "terms": [
+        "te voy a matar", "os voy a matar", "te mato", "os mato", "ojala te mueras", "ojala os murais",
+        "muerete", "moriros", "te voy a reventar", "se donde vives", "te voy a quemar", "voy a quemar tu",
+        "te rajo", "te voy a rajar", "te parto la cara", "te voy a partir la cara", "te pego un tiro",
+        "pegarte un tiro", "te voy a pegar un tiro"
+      ]
+    },
+    "insultos": {
+      "label": "insultos o descalificaciones",
+      "severity": "mild",
+      "terms": [
+        "idiota", "imbecil*", "gilipoll*", "subnormal*", "estupid*", "cretino", "mamarracho", "energumeno",
+        "pringado", "lerdo", "zoquete", "mequetrefe", "majadero", "cenutrio", "mongolo=", "mongolic*",
+        "retrasado mental", "hijo de puta", "hija de puta", "hijos de puta", "hijoputa", "hijueputa", "hdp=", "malparido",
+        "desgraciado", "sinverguenza", "soplapollas", "chupapollas", "lameculos", "comemierda", "carapolla",
+        "caraculo", "basura humana", "escoria humana", "paleto=", "cabron", "cabrona", "tonto del culo",
+        "tonta del culo", "anormal de mierda", "payaso de mierda", "muerto de hambre"
+      ]
+    },
+    "vulgaridades": {
+      "label": "lenguaje vulgar u ofensivo",
+      "severity": "mild",
+      "terms": [
+        "puta", "putada", "puton", "putero", "putiferio", "mierda", "mierdoso", "joder=", "jodete", "jodeos",
+        "jodido", "que te jodan", "que os jodan", "coño=", "cojones=", "cojon=", "follar=", "follando",
+        "follate", "me cago en", "cagate", "vete a la mierda", "idos a la mierda", "a tomar por culo",
+        "tomar por culo", "pajillero", "pajero", "zorron", "comepollas", "chupame"
+      ]
+    }
+  },
+  "ambiguous_excluded": {
+    "_doc": "Palabras ofensivas en otros contextos pero de uso agrícola o cotidiano legítimo: NO se bloquean automáticamente (las cubren las denuncias y la moderación manual).",
+    "terms": {
+      "capullo": "brote / yema floral",
+      "zorra": "hembra del zorro",
+      "perra": "hembra del perro",
+      "polla": "gallina joven",
+      "mamon": "chupón (brote del árbol) y fruta",
+      "verga": "palo / pieza de aparejo",
+      "chocho": "altramuz",
+      "parasito": "plaga",
+      "tarado": "peso tarado (tara de báscula)",
+      "retrasado": "cosecha o riego con retraso",
+      "anormal": "valor anormal de un sensor",
+      "inutil": "herramienta inútil",
+      "cerdo": "ganado porcino",
+      "gañan": "mozo de labranza",
+      "hostia": "uso religioso",
+      "culo": "fondo de un recipiente"
+    }
+  }
+}

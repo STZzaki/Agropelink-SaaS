@@ -1,0 +1,29 @@
+export const FORUM_CATEGORIES = [
+  { id: 'plagas', label: 'Tratamientos y Plagas', description: 'Umbrales, materias activas, lucha integrada y control biológico.', accent: 'from-accent-400 to-accent-600', text: 'text-accent-200', ring: 'ring-accent-400/30', bg: 'bg-accent-500/10' },
+  { id: 'riego', label: 'Riego y Eficiencia', description: 'Programación de riego, fertirrigación, sondas y ahorro de agua.', accent: 'from-secondary-400 to-secondary-600', text: 'text-secondary-200', ring: 'ring-secondary-400/30', bg: 'bg-secondary-500/10' },
+  { id: 'lonjas', label: 'Cotizaciones y Lonjas', description: 'Precios en origen, alhóndigas, contratos y comercialización.', accent: 'from-primary-400 to-primary-600', text: 'text-primary-200', ring: 'ring-primary-400/30', bg: 'bg-primary-500/10' },
+  { id: 'maquinaria', label: 'Maquinaria', description: 'Equipos, mantenimiento, inspecciones ITEAF y novedades.', accent: 'from-slate-300 to-slate-500', text: 'text-slate-200', ring: 'ring-white/20', bg: 'bg-white/5' },
+]
+
+export const categoryById = (id) => FORUM_CATEGORIES.find((c) => c.id === id) ?? FORUM_CATEGORIES[0]
+
+const rtf = new Intl.RelativeTimeFormat('es', { numeric: 'auto' })
+const UNITS = [
+  ['year', 31536000],
+  ['month', 2592000],
+  ['week', 604800],
+  ['day', 86400],
+  ['hour', 3600],
+  ['minute', 60],
+]
+
+export function timeAgo(iso) {
+  const seconds = (new Date(iso).getTime() - Date.now()) / 1000
+  for (const [unit, s] of UNITS) {
+    if (Math.abs(seconds) >= s) return rtf.format(Math.round(seconds / s), unit)
+  }
+  return 'ahora mismo'
+}
+
+export const formatDate = (iso) =>
+  new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })

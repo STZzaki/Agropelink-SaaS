@@ -1,0 +1,32 @@
+# --- Secretos (regla: prohibido subir .env a GitHub) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python / backend ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.sqlite3
+*.db
+
+# --- Node / frontend ---
+node_modules/
+dist/
+.vite/
+coverage/
+
+# --- Sistema / IDE ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# --- Archivos subidos por usuarios (almacenamiento privado) ---
+backend/storage/

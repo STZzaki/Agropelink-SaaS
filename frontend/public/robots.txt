@@ -1,0 +1,16 @@
+# Agropelink — https://agropelink.es
+User-agent: *
+Allow: /
+Allow: /foro
+Allow: /privacidad
+Allow: /terminos
+
+# Panel privado, autenticación y API: fuera de los buscadores
+Disallow: /dashboard
+Disallow: /tasks
+Disallow: /documents
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+
+Sitemap: https://agropelink.es/sitemap.xml
