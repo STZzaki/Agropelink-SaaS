@@ -11,4 +11,5 @@ httpx==0.28.1
 PyJWT==2.15.1
 Pillow==12.3.0
 pypdf==6.20.0
-pymysqlcertifi
+pymysql==1.1.0
+certifi
