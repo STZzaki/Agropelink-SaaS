@@ -1,6 +1,6 @@
 """Indexación documental: códigos de serie únicos `AGRO-<año>-<serie>-<nº>` (p. ej. AGRO-2026-FCT-0042)."""
 
-from sqlalchemy import insert, select, update
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -8,23 +8,31 @@ from models import DOCUMENT_SERIES, Document, DocumentSequence
 from security import utcnow
 
 
-def next_reference(db: Session, year: int, series: str) -> str:
-    """Reserva el siguiente número de la serie de forma atómica (UPDATE … SET last = last + 1)."""
-    stmt = (
-        update(DocumentSequence)
+def _locked_sequence(db: Session, year: int, series: str) -> DocumentSequence | None:
+    # SELECT … FOR UPDATE: bloquea la fila hasta el fin de la transacción (MySQL/TiDB; SQLite lo omite y ya
+    # serializa las escrituras). populate_existing relee el valor real aunque el objeto ya estuviera en la sesión.
+    return db.scalar(
+        select(DocumentSequence)
         .where(DocumentSequence.year == year, DocumentSequence.series == series)
-        .values(last=DocumentSequence.last + 1)
-        .returning(DocumentSequence.last)
+        .with_for_update()
+        .execution_options(populate_existing=True)
     )
-    number = db.scalar(stmt)
-    if number is None:
+
+
+def next_reference(db: Session, year: int, series: str) -> str:
+    """Reserva el siguiente número de la serie. Compatible con MySQL/TiDB (sin RETURNING): lee la fila bloqueada,
+    incrementa en Python y hace flush; el commit lo decide quien llama."""
+    seq = _locked_sequence(db, year, series)
+    if seq is None:
         try:
-            with db.begin_nested():
-                db.execute(insert(DocumentSequence).values(year=year, series=series, last=1))
-            number = 1
-        except IntegrityError:  # otra petición creó el contador a la vez
-            number = db.scalar(stmt)
-    return f"AGRO-{year}-{series}-{number:04d}"
+            with db.begin_nested():  # savepoint: si otra petición creó el contador a la vez, solo se deshace esto
+                db.add(DocumentSequence(year=year, series=series, last=1))
+            return f"AGRO-{year}-{series}-0001"
+        except IntegrityError:
+            seq = _locked_sequence(db, year, series)
+    seq.last = (seq.last or 0) + 1
+    db.flush()
+    return f"AGRO-{year}-{series}-{seq.last:04d}"
 
 
 def assign_reference(db: Session, document: Document) -> str:

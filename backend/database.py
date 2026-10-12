@@ -1,7 +1,8 @@
 from collections.abc import Generator
+from pathlib import Path
 
 from sqlalchemy import create_engine, event
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import URL, Engine, make_url
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from config import get_settings
@@ -10,20 +11,41 @@ settings = get_settings()
 
 _is_sqlite = settings.database_url.startswith("sqlite")
 
+_SSL_QUERY_KEYS = ("ssl_ca", "ssl_verify_cert", "ssl_verify_identity", "ssl_cert", "ssl_key")
 
-def _engine_options() -> dict:
+
+def _ssl_ca(url: URL) -> str | None:
+    """CA para TLS: DATABASE_SSL_CA o `ssl_ca` de la URL si el archivo existe; si no (p. ej. una ruta de Linux en
+    Windows), el paquete de CA de `certifi`. TiDB Cloud siempre exige TLS aunque la URL no lo indique."""
+    wanted = settings.database_ssl_ca or url.query.get("ssl_ca")
+    if isinstance(wanted, tuple):
+        wanted = wanted[0]
+    if wanted and Path(wanted).is_file():
+        return str(wanted)
+    if wanted or "tidbcloud.com" in (url.host or ""):
+        import certifi  # dependencia de httpx: gratuita y ya instalada
+
+        return certifi.where()
+    return None
+
+
+def _engine_args() -> tuple[URL, dict]:
+    url = make_url(settings.database_url)
     if _is_sqlite:
         # SQLite solo permite por defecto el hilo que creó la conexión; FastAPI usa varios.
-        return {"connect_args": {"check_same_thread": False}}
+        return url, {"connect_args": {"check_same_thread": False}}
     # MySQL / TiDB (mysql+pymysql://...): comprobar la conexión antes de usarla y renovarla antes de que el
-    # servidor cierre las inactivas. TiDB Cloud exige TLS: CA en DATABASE_SSL_CA (se verifica el certificado).
+    # servidor cierre las inactivas. TLS con verificación del certificado Y del nombre del servidor.
     options: dict = {"pool_pre_ping": True, "pool_recycle": 280, "pool_size": 5, "max_overflow": 10}
-    if settings.database_ssl_ca:
-        options["connect_args"] = {"ssl": {"ca": settings.database_ssl_ca, "check_hostname": True}}
-    return options
+    ca = _ssl_ca(url)
+    if ca:
+        url = url.difference_update_query(_SSL_QUERY_KEYS)
+        options["connect_args"] = {"ssl": {"ca": ca, "check_hostname": True}}
+    return url, options
 
 
-engine = create_engine(settings.database_url, **_engine_options())
+_url, _options = _engine_args()
+engine = create_engine(_url, **_options)
 
 if _is_sqlite:
 
