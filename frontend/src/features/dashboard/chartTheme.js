@@ -1,14 +1,20 @@
-// Tema de gráficas del panel (validado con dataviz/validate_palette.js sobre la superficie oscura #0c171a):
+// Tema de gráficas del panel (validado con dataviz/validate_palette.js sobre la superficie oscura #1c2623, gris bosque):
 // insumos este año vs anterior → verde azulado vs tierra: ΔE CVD 9,2 (protan), visión normal 19,4, contraste ≥ 3:1.
 export const CHART = {
   water: '#24a58c', // agua usada (barras)
   moisture: '#7fc982', // humedad del suelo (línea; serie única en su gráfica)
   thisYear: '#24a58c',
   lastYear: '#c6804b', // además, trazo discontinuo (codificación secundaria)
+  // Economía (barras apiladas): fijos · variables · facturas. Validado con --pairs all sobre #1c2623:
+  // ΔE CVD peor 9,2 (protan), tritan 9,6, visión normal ≥ 19,4. Siempre con leyenda y vista de tabla.
+  fixed: '#24a58c',
+  variable: '#c6804b',
+  invoices: '#8a7fd6',
+  declared: '#6f8379', // gasto declarado sin desglose: gris neutro, no es una categoría
   grid: 'rgb(255 255 255 / 0.06)',
-  axis: '#64748b',
-  ink: '#e2e8f0',
-  muted: '#94a3b8',
+  axis: '#6f8379',
+  ink: '#e9efeb',
+  muted: '#93a59b',
 }
 
 export const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']

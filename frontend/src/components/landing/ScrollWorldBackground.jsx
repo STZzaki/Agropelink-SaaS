@@ -19,7 +19,7 @@ import { ScrollTrigger, gsap, prefersReducedMotion } from '../../lib/gsap.js'
  */
 
 // Paleta corporativa (verde azulado en las crestas) sobre fondo casi negro.
-const PALETTE = { teal: new THREE.Color('#2db59a'), fog: '#020617' }
+const PALETTE = { teal: new THREE.Color('#2db59a'), fog: '#131c19' }
 const FIELD_WIDTH = 48
 
 // Relieve suave determinista (suma de senos): colinas, una vaguada y ondulación de surcos.

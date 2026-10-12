@@ -95,16 +95,77 @@ export const analyticsApi = {
   overview: (params, config) => api.get('/analytics/overview', { params, ...config }).then((r) => r.data),
 }
 
+export const economyApi = {
+  harvests: (farmId, config) => api.get(`/farms/${farmId}/harvests`, config).then((r) => r.data),
+  createHarvest: (farmId, payload) => api.post(`/farms/${farmId}/harvests`, payload).then((r) => r.data),
+  updateHarvest: (farmId, id, payload) => api.put(`/farms/${farmId}/harvests/${id}`, payload).then((r) => r.data),
+  removeHarvest: (farmId, id) => api.delete(`/farms/${farmId}/harvests/${id}`),
+  expenses: (farmId, params, config) => api.get(`/farms/${farmId}/expenses`, { params, ...config }).then((r) => r.data),
+  createExpense: (farmId, payload) => api.post(`/farms/${farmId}/expenses`, payload).then((r) => r.data),
+  removeExpense: (farmId, id) => api.delete(`/farms/${farmId}/expenses/${id}`),
+  finance: (farmId, year, config) => api.get(`/farms/${farmId}/finance`, { params: { year }, ...config }).then((r) => r.data),
+}
+
+export const sensorsApi = {
+  list: (farmId, config) => api.get(`/farms/${farmId}/sensors`, config).then((r) => r.data),
+  series: (farmId, hours, config) => api.get(`/farms/${farmId}/sensors/series`, { params: { hours }, ...config }).then((r) => r.data),
+  create: (farmId, payload) => api.post(`/farms/${farmId}/sensors`, payload).then((r) => r.data),
+  remove: (farmId, sensorId) => api.delete(`/farms/${farmId}/sensors/${sensorId}`),
+  addSamples: (farmId, sensorId, samples) => api.post(`/farms/${farmId}/sensors/${sensorId}/samples`, { samples }).then((r) => r.data),
+}
+
 export const tasksApi = {
   list: (params, config) => api.get('/tasks', { params, ...config }).then((r) => r.data),
   create: (payload) => api.post('/tasks', payload).then((r) => r.data),
   update: (id, payload) => api.put(`/tasks/${id}`, payload).then((r) => r.data),
   remove: (id) => api.delete(`/tasks/${id}`),
+  /** Foto (PNG/JPEG/WEBP, máx. 5 MB) o PDF (máx. 10 MB). Devuelve la tarea con sus adjuntos. */
+  addAttachment: (id, file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.post(`/tasks/${id}/attachments`, form, { timeout: 120000 }).then((r) => r.data)
+  },
+  removeAttachment: (id, attachmentId) => api.delete(`/tasks/${id}/attachments/${attachmentId}`),
+  /** Descarga autenticada por la cookie de sesión (mismo sitio). */
+  attachmentUrl: (id, attachmentId) => `${baseURL}/tasks/${id}/attachments/${attachmentId}`,
+}
+
+export const TASK_ATTACHMENT = {
+  types: ['image/png', 'image/jpeg', 'image/webp', 'application/pdf'],
+  imageMaxBytes: 5 * 1024 * 1024,
+  pdfMaxBytes: 10 * 1024 * 1024,
+  max: 10,
+}
+
+export const workersApi = {
+  list: (config) => api.get('/workers', config).then((r) => r.data),
+  create: (payload) => api.post('/workers', payload).then((r) => r.data),
+  update: (id, payload) => api.put(`/workers/${id}`, payload).then((r) => r.data),
+  remove: (id) => api.delete(`/workers/${id}`),
+  invite: (id) => api.post(`/workers/${id}/invite`).then((r) => r.data),
+  unlink: (id) => api.delete(`/workers/${id}/link`),
+}
+
+/** Vista del trabajador: vínculos con agricultores y tareas asignadas. */
+export const assignedApi = {
+  links: (config) => api.get('/me/worker-links', config).then((r) => r.data),
+  redeem: (code) => api.post('/me/worker-links', { code }).then((r) => r.data),
+  leave: (workerId) => api.delete(`/me/worker-links/${workerId}`),
+  tasks: (params, config) => api.get('/me/tasks', { params, ...config }).then((r) => r.data),
+  setStatus: (taskId, status) => api.put(`/me/tasks/${taskId}/status`, { status }).then((r) => r.data),
+  attachmentUrl: (taskId, attachmentId) => `${baseURL}/me/tasks/${taskId}/attachments/${attachmentId}`,
+}
+
+export const siexApi = {
+  /** `assist`: añade el resumen y los próximos pasos redactados por el agente. */
+  draft: (farmId, year, config, assist = true) => api.get(`/farms/${farmId}/siex/draft`, { params: { year, assist }, timeout: 90000, ...config }).then((r) => r.data),
 }
 
 export const agentApi = {
   /** @param {{ message: string, history: { role: 'user' | 'model', text: string }[] }} payload */
   chat: (payload) => api.post('/agent/chat', payload, { timeout: 90000 }).then((r) => r.data),
+  /** Resumen del día (siempre local: sin coste ni terceros). */
+  briefing: (config) => api.get('/agent/briefing', config).then((r) => r.data),
 }
 
 export const contactApi = {
@@ -128,6 +189,11 @@ export const forumApi = {
   create: (payload) => api.post('/forum/threads', payload).then((r) => r.data),
   reply: (id, payload) => api.post(`/forum/threads/${id}/replies`, payload).then((r) => r.data),
   report: (payload) => api.post('/forum/reports', payload).then((r) => r.data),
+  /** Activa/quita «Me gusta» o una reacción (lista cerrada). Devuelve { counts, mine } de esa publicación. */
+  react: (payload) => api.put('/forum/reactions', payload).then((r) => r.data),
+  mentionable: (q, config) => api.get('/forum/mentionable', { params: { q }, ...config }).then((r) => r.data),
+  mentions: (config) => api.get('/forum/mentions', config).then((r) => r.data),
+  readMentions: () => api.post('/forum/mentions/read'),
   /** Sube una imagen/vídeo con la aceptación legal expresa; devuelve { id, kind, url }. */
   uploadMedia: (file, onProgress) => {
     const form = new FormData()
@@ -197,6 +263,12 @@ const progressHandler = (onProgress) => (e) => {
 }
 
 export const documentsApi = {
+  notes: (id, config) => api.get(`/documents/${id}/notes`, config).then((r) => r.data),
+  addNote: (id, payload) => api.post(`/documents/${id}/notes`, payload).then((r) => r.data),
+  updateNote: (id, noteId, payload) => api.patch(`/documents/${id}/notes/${noteId}`, payload).then((r) => r.data),
+  removeNote: (id, noteId) => api.delete(`/documents/${id}/notes/${noteId}`),
+  /** Recordatorios pendientes: vencidos y los de los próximos `days` días. */
+  reminders: (days, config) => api.get('/documents/reminders', { params: { days }, ...config }).then((r) => r.data),
   list: (params, config) => api.get('/documents', { params, ...config }).then((r) => r.data),
   facets: (config) => api.get('/documents/facets', config).then((r) => r.data),
   folders: (config) => api.get('/documents/folders', config).then((r) => r.data),

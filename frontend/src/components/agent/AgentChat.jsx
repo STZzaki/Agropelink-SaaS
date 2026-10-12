@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { agentApi, documentsApi, farmsApi, getErrorMessage, tasksApi } from '../../api.js'
+import { Lock } from 'lucide-react'
+import { agentApi, documentsApi, economyApi, farmsApi, getErrorMessage, tasksApi, workersApi } from '../../api.js'
 import ChatInput from './ChatInput.jsx'
 import ChatMessage from './ChatMessage.jsx'
 
@@ -16,8 +17,14 @@ const WELCOME = {
   id: newId(),
   role: 'agent',
   welcome: true,
-  text: '¡Hola! Soy Agropelink AI. Pregúntame dudas de campo, pídeme que programe una labor o adjunta una factura, albarán o análisis para archivarlo.',
+  text: 'Hola, soy Agropelink AI. Conozco tus sensores, tareas, economía, recordatorios, equipo y cuaderno SIEX. Pregúntame, pídeme que programe una labor o que apunte un gasto, o adjunta una factura para archivarla.',
 }
+
+// Preguntas sugeridas: se envían tal cual al pulsarlas.
+const SUGGESTIONS = ['Resumen de hoy', '¿Cómo están los sensores?', '¿Qué tareas tengo esta semana?', '¿Cuánto llevo gastado?', '¿Cómo está el cuaderno SIEX?']
+// Motores que NO envían datos fuera de la infraestructura propia.
+const PRIVATE_ENGINES = new Set(['local', 'ollama'])
+const ACTION_TYPES = new Set(['create_task', 'register_expense'])
 
 function ThinkingIndicator() {
   return (
@@ -48,6 +55,8 @@ export default function AgentChat() {
   const [thinking, setThinking] = useState(false)
   const [farms, setFarms] = useState([])
   const [farmsLoading, setFarmsLoading] = useState(false)
+  const [workers, setWorkers] = useState([])
+  const [engine, setEngine] = useState('local')
   const listRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -62,6 +71,7 @@ export default function AgentChat() {
     inputRef.current?.focus()
     const controller = new AbortController()
     setFarmsLoading(true)
+    workersApi.list({ signal: controller.signal }).then(setWorkers).catch(() => {})
     farmsApi
       .list({ limit: 100 }, { signal: controller.signal })
       .then(setFarms)
@@ -101,15 +111,16 @@ export default function AgentChat() {
         setMessages((list) => [...list, message])
         return
       }
-      const { reply, action } = await agentApi.chat({ message: text, history })
+      const { reply, action, engine: used } = await agentApi.chat({ message: text, history })
+      if (used) setEngine(used)
       setMessages((list) => [
         ...list,
         {
           id: newId(),
           role: 'agent',
           text: reply,
-          action: action?.type === 'create_task' ? action : null,
-          actionStatus: action?.type === 'create_task' ? 'pending' : undefined,
+          action: ACTION_TYPES.has(action?.type) ? action : null,
+          actionStatus: ACTION_TYPES.has(action?.type) ? 'pending' : undefined,
           docProposal: action?.type === 'file_document' ? action.proposal : null,
           docState: action?.type === 'file_document' ? 'pending' : undefined,
         },
@@ -122,17 +133,31 @@ export default function AgentChat() {
     }
   }
 
-  async function handleApprove(messageId, { farm_id, date }) {
+  async function handleApprove(messageId, details) {
     const message = messages.find((m) => m.id === messageId)
     if (!message?.action || message.actionStatus !== 'pending') return
 
     patchMessage(messageId, { actionStatus: 'submitting', actionError: null })
     try {
+      if (message.action.type === 'register_expense') {
+        await economyApi.createExpense(details.farm_id, {
+          category: details.category,
+          concept: message.action.concept,
+          amount: message.action.amount,
+          incurred_on: details.incurred_on,
+          is_fixed: false,
+        })
+        patchMessage(messageId, { actionStatus: 'approved' })
+        return
+      }
       const task = await tasksApi.create({
         title: message.action.title,
         description: message.action.description || null,
-        date,
-        farm_id,
+        category: details.category,
+        date: details.date,
+        end_date: details.end_date,
+        farm_id: details.farm_id,
+        worker_id: details.worker_id,
       })
       patchMessage(messageId, { actionStatus: 'approved', createdTaskId: task.id })
       window.dispatchEvent(new CustomEvent(TASK_CREATED_EVENT, { detail: task }))
@@ -165,7 +190,13 @@ export default function AgentChat() {
               <img src="/assets/Logo sin texto blanco sin fondo.png" alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
               <div>
                 <p className="text-sm font-semibold">Agropelink AI</p>
-                <p className="text-[11px] text-primary-300">Asistente agronómico</p>
+                {PRIVATE_ENGINES.has(engine) ? (
+                  <p className="inline-flex items-center gap-1 text-[11px] text-primary-300" title="Tus datos no salen de los servidores de Agropelink">
+                    <Lock className="h-3 w-3" aria-hidden="true" /> Privado · {engine === 'ollama' ? 'modelo propio' : 'en nuestro servidor'}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-accent-200">Con Gemini (Google)</p>
+                )}
               </div>
             </div>
             <button
@@ -186,6 +217,7 @@ export default function AgentChat() {
                 key={m.id}
                 message={m}
                 farms={farms}
+                workers={workers}
                 farmsLoading={farmsLoading}
                 onApprove={handleApprove}
                 onReject={handleReject}
@@ -194,6 +226,19 @@ export default function AgentChat() {
               />
             ))}
             {thinking && <ThinkingIndicator />}
+            {messages.length === 1 && !thinking && (
+              <li>
+                <ul className="flex flex-wrap gap-1.5" aria-label="Preguntas sugeridas">
+                  {SUGGESTIONS.map((q) => (
+                    <li key={q}>
+                      <button type="button" onClick={() => handleSend(q)} className="rounded-full bg-white/[0.05] px-3 py-1.5 text-xs text-slate-200 ring-1 ring-inset ring-white/10 transition-colors hover:bg-secondary-500/15 hover:text-white">
+                        {q}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            )}
           </ul>
 
           <ChatInput ref={inputRef} onSend={handleSend} disabled={thinking} />

@@ -5,6 +5,7 @@ import UserMenu from '../auth/UserMenu.jsx'
 
 const FARMER_LINKS = [
   { to: '/dashboard', label: 'Resumen' },
+  { to: '/economia', label: 'Economía' },
   { to: '/tasks', label: 'Tareas' },
   { to: '/documents', label: 'Documentos' },
   { to: '/foro', label: 'Foro' },

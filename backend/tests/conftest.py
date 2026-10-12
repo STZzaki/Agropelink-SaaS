@@ -18,6 +18,7 @@ os.environ.update(
         "UPLOAD_DIR": str(_TMP / "storage" / "documents"),
         "FORUM_MEDIA_DIR": str(_TMP / "storage" / "forum_media"),
         "FARM_PHOTO_DIR": str(_TMP / "storage" / "farm_photos"),
+        "TASK_MEDIA_DIR": str(_TMP / "storage" / "task_media"),
         "COOKIE_SECURE": "true",
         "GEMINI_API_KEY": "AIzaFAKE_TEST_KEY_0123456789abcdefghijk",
         "SMTP_HOST": "",

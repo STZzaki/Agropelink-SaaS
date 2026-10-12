@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     environment: Literal["development", "production"] = "development"
     database_url: str = "sqlite:///./agropelink.db"
+    # TiDB Cloud / MySQL con TLS: ruta al certificado CA (p. ej. /etc/ssl/certs/ca-certificates.crt).
+    database_ssl_ca: str | None = None
     # CORS restringido a orígenes explícitos; nunca "*".
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
     # Almacenamiento privado de documentos: fuera de cualquier ruta servida públicamente.
@@ -20,6 +22,7 @@ class Settings(BaseSettings):
     # Multimedia del foro: directorio privado (se sirve solo vía API) y límites por tipo.
     forum_media_dir: str = "./storage/forum_media"
     farm_photo_dir: str = "./storage/farm_photos"
+    task_media_dir: str = "./storage/task_media"
     # Clasificación documental con Gemini (envía el documento a Google). Desactivada por defecto:
     # política de la plataforma de no enviar datos a terceros; sin ella se usa la extracción local.
     document_ai_use_gemini: bool = False
@@ -32,6 +35,14 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.8-flash"
     gemini_timeout_seconds: int = 60
     agent_rate_limit_per_minute: int = 15
+    # Motor del agente: auto (Ollama si está configurado; si no, local) · local · ollama · gemini.
+    # local y ollama no envían datos a terceros; gemini envía la pregunta y el contexto mínimo a Google
+    # y solo se usa si se elige explícitamente.
+    agent_engine: str = "auto"
+    # Ollama (modelo abierto y gratuito en tu propio servidor). Solo configurable por el operador, nunca por el cliente.
+    ollama_url: str | None = None
+    ollama_model: str = "llama3.2:3b"
+    ollama_timeout_seconds: int = 60
     # Sesiones: token opaco en cookie HttpOnly; en BD solo se guarda su hash SHA-256.
     session_cookie_name: str = "agropelink_session"
     session_ttl_hours: int = 168  # 7 días
@@ -54,7 +65,10 @@ class Settings(BaseSettings):
     smtp_from: str = "info@agropelink.es"
     smtp_starttls: bool = True
     # Moderación: nº de infracción que provoca el bloqueo (2 = reincidir tras la advertencia oficial; la grave bloquea siempre).
-    moderation_ban_after_warnings: int = 2
+    # Faltas: advertencia en la 1.ª y la 2.ª; bloqueo en la 3.ª. Las faltas caducan (el contador vuelve a 0)
+    # tras `moderation_warning_ttl_hours` sin nuevas infracciones (rango acordado: 48–72 h).
+    moderation_ban_after_warnings: int = 3
+    moderation_warning_ttl_hours: int = 72
     # Análisis de documentos con IA: tamaño máximo enviado al modelo y caducidad de los borradores sin confirmar.
     document_ai_max_bytes: int = 8 * 1024 * 1024
     document_draft_ttl_hours: int = 24

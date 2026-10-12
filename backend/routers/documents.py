@@ -9,16 +9,28 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, Response, Uploa
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import case, delete, func, or_, select
 from sqlalchemy.orm import Session
 
 from config import get_settings
 from deps import DbSession, FarmerUser, get_owned_farm
 from document_ai import FarmRef, classify_document
 from document_index import assign_reference
-from models import Document, DocumentStatus, DocumentType, Farm, User, UserRole
+from models import Document, DocumentNote, DocumentStatus, DocumentType, Farm, User, UserRole
 from ratelimit import SlidingWindowLimiter
-from schemas import DocumentDraftResponse, DocumentFacets, DocumentFolder, DocumentList, DocumentMeta, DocumentResponse, DocumentUpdate
+from schemas import (
+    DocumentDraftResponse,
+    DocumentFacets,
+    DocumentFolder,
+    DocumentList,
+    DocumentMeta,
+    DocumentNoteCreate,
+    DocumentNoteResponse,
+    DocumentNoteUpdate,
+    DocumentReminder,
+    DocumentResponse,
+    DocumentUpdate,
+)
 from security import utcnow
 from storage import delete_stored, iter_stored, read_stored, sanitize_filename, save_upload
 
@@ -68,6 +80,25 @@ def _purge_stale_drafts(db: Session, user: User) -> None:
         db.commit()
 
 
+def _notes_summary(db: Session, document_ids: list[int]) -> dict[int, tuple[int, dt.date | None]]:
+    """(nº de notas, próximo recordatorio pendiente) por documento, en una sola consulta agregada."""
+    if not document_ids:
+        return {}
+    pending = case((DocumentNote.done.is_(False), DocumentNote.remind_on))
+    rows = db.execute(
+        select(DocumentNote.document_id, func.count(DocumentNote.id), func.min(pending))
+        .where(DocumentNote.document_id.in_(document_ids))
+        .group_by(DocumentNote.document_id)
+    )
+    return {doc_id: (count, nxt) for doc_id, count, nxt in rows}
+
+
+def _with_notes(document: Document, summary: dict[int, tuple[int, dt.date | None]]) -> DocumentResponse:
+    response = DocumentResponse.model_validate(document)
+    response.note_count, response.next_reminder = summary.get(document.id, (0, None))
+    return response
+
+
 def _user_farms(db: Session, user: User) -> list[FarmRef]:
     rows = db.execute(select(Farm.id, Farm.name, Farm.location).where(Farm.owner_id == user.id).order_by(Farm.id)).all()
     return [FarmRef(id=r.id, name=r.name, location=r.location) for r in rows]
@@ -110,7 +141,8 @@ def list_documents(
     base = select(Document).join(Document.farm).where(*filters)
     total = db.scalar(select(func.count()).select_from(base.subquery())) or 0
     items = db.scalars(base.order_by(Document.created_at.desc(), Document.id.desc()).limit(limit).offset(offset)).all()
-    return DocumentList(items=[DocumentResponse.model_validate(d) for d in items], total=total)
+    summary = _notes_summary(db, [d.id for d in items])
+    return DocumentList(items=[_with_notes(d, summary) for d in items], total=total)
 
 
 @router.get("/facets", response_model=DocumentFacets)
@@ -274,6 +306,8 @@ def delete_document(document_id: int, db: DbSession, user: FarmerUser) -> Respon
     if document is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
     storage_key = document.file_url
+    # Notas explícitamente (no se depende de que el motor aplique ON DELETE CASCADE).
+    db.execute(delete(DocumentNote).where(DocumentNote.document_id == document.id))
     db.execute(delete(Document).where(Document.id == document.id))
     db.commit()
     delete_stored(storage_key)
@@ -300,3 +334,88 @@ def download_document(document_id: int, db: DbSession, user: FarmerUser) -> Stre
     return StreamingResponse(
         iter_stored(document.file_url), media_type=document.content_type or "application/octet-stream", headers=headers
     )
+
+
+# --- Notas y recordatorios ----------------------------------------------------------------------------
+
+MAX_NOTES_PER_DOCUMENT = 50
+
+
+def _owned_note(db: Session, document_id: int, note_id: int, user: User) -> DocumentNote:
+    _owned_document(db, document_id, user)
+    note = db.scalar(select(DocumentNote).where(DocumentNote.id == note_id, DocumentNote.document_id == document_id))
+    if note is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    return note
+
+
+@router.get("/reminders", response_model=list[DocumentReminder])
+def reminders(
+    db: DbSession,
+    user: FarmerUser,
+    days: Annotated[int, Query(ge=1, le=365)] = 30,
+) -> list[DocumentReminder]:
+    """Recordatorios pendientes de los documentos propios: vencidos y los de los próximos `days` días."""
+    today = dt.date.today()
+    rows = db.execute(
+        select(DocumentNote, Document.reference, Document.filename)
+        .join(Document, DocumentNote.document_id == Document.id)
+        .join(Farm, Document.farm_id == Farm.id)
+        .where(
+            Farm.owner_id == user.id,
+            Document.is_draft.is_(False),
+            DocumentNote.done.is_(False),
+            DocumentNote.remind_on.is_not(None),
+            DocumentNote.remind_on <= today + dt.timedelta(days=days),
+        )
+        .order_by(DocumentNote.remind_on, DocumentNote.id)
+        .limit(100)
+    ).all()
+    return [
+        DocumentReminder(**DocumentNoteResponse.model_validate(note).model_dump(), reference=ref, filename=name, overdue=note.remind_on < today)
+        for note, ref, name in rows
+    ]
+
+
+@router.get("/{document_id}/notes", response_model=list[DocumentNoteResponse])
+def list_notes(document_id: int, db: DbSession, user: FarmerUser) -> list[DocumentNote]:
+    _owned_document(db, document_id, user)
+    stmt = select(DocumentNote).where(DocumentNote.document_id == document_id)
+    # Pendientes primero, por fecha de recordatorio; luego el resto, más recientes primero.
+    return list(db.scalars(stmt.order_by(DocumentNote.done, DocumentNote.remind_on.is_(None), DocumentNote.remind_on, DocumentNote.created_at.desc())))
+
+
+@router.post("/{document_id}/notes", response_model=DocumentNoteResponse, status_code=status.HTTP_201_CREATED)
+def create_note(document_id: int, payload: DocumentNoteCreate, db: DbSession, user: FarmerUser) -> DocumentNote:
+    _owned_document(db, document_id, user)
+    count = db.scalar(select(func.count(DocumentNote.id)).where(DocumentNote.document_id == document_id)) or 0
+    if count >= MAX_NOTES_PER_DOCUMENT:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Máximo {MAX_NOTES_PER_DOCUMENT} notas por documento.")
+    now = utcnow()
+    note = DocumentNote(document_id=document_id, author_id=user.id, body=payload.body, remind_on=payload.remind_on, created_at=now, updated_at=now)
+    db.add(note)
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+@router.patch("/{document_id}/notes/{note_id}", response_model=DocumentNoteResponse)
+def update_note(document_id: int, note_id: int, payload: DocumentNoteUpdate, db: DbSession, user: FarmerUser) -> DocumentNote:
+    note = _owned_note(db, document_id, note_id, user)
+    changes = payload.model_dump(exclude_unset=True)
+    for field in ("body", "done"):
+        if field in changes and changes[field] is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"'{field}' cannot be null")
+    for field, value in changes.items():
+        setattr(note, field, value)
+    note.updated_at = utcnow()
+    db.commit()
+    db.refresh(note)
+    return note
+
+
+@router.delete("/{document_id}/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_note(document_id: int, note_id: int, db: DbSession, user: FarmerUser) -> Response:
+    db.delete(_owned_note(db, document_id, note_id, user))
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -21,6 +21,7 @@ const ForumLayout = lazy(() => import('./components/layout/ForumLayout.jsx'))
 const PortalPage = lazy(() => import('./pages/PortalPage.jsx'))
 const PublicLayout = lazy(() => import('./components/layout/PublicLayout.jsx'))
 const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'))
+const EconomyPage = lazy(() => import('./pages/EconomyPage.jsx'))
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage.jsx'))
 const ForumPage = lazy(() => import('./pages/ForumPage.jsx'))
 const ForumThreadPage = lazy(() => import('./pages/ForumThreadPage.jsx'))
@@ -68,6 +69,7 @@ export default function App() {
                   <Route element={<RequireAuth roles={[ROLES.FARMER, ROLES.ADMIN]} />}>
                     <Route path="dashboard" element={<DashboardPage />} />
                     <Route path="farms/nueva" element={<FarmNewPage />} />
+                    <Route path="economia" element={<EconomyPage />} />
                     <Route path="tasks" element={<TasksPage />} />
                     <Route path="documents" element={<DocumentsPage />} />
                   </Route>

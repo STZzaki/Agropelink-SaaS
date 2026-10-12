@@ -1,11 +1,21 @@
-import { useState } from 'react'
+import { BellRing, StickyNote } from 'lucide-react'
+import { Fragment, useState } from 'react'
 import { documentsApi, getErrorMessage } from '../../api.js'
 import { optionClass } from '../../components/ui/FormField.jsx'
+import DocumentNotes from './DocumentNotes.jsx'
 import { DOC_STATUSES, docStatus, docTypeLabel, formatAmount, formatDay } from './documentMeta.js'
+
+const COLUMNS = 7
+const todayISO = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 function Row({ doc, farmName, onChanged, onError }) {
   const [busy, setBusy] = useState(null) // download | delete | status
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
+  const overdue = doc.next_reminder && doc.next_reminder < todayISO()
   const status = docStatus(doc.status)
 
   async function run(kind, action) {
@@ -23,11 +33,30 @@ function Row({ doc, farmName, onChanged, onError }) {
   }
 
   return (
+    <Fragment>
     <tr className="align-top">
       <td className="whitespace-nowrap py-3 pr-4 font-mono text-xs font-semibold text-white">{doc.reference}</td>
       <td className="max-w-[14rem] py-3 pr-4">
         <p className="truncate font-medium text-slate-100" title={doc.filename}>{doc.filename}</p>
         <p className="text-xs text-slate-400">{docTypeLabel(doc.doc_type)}{doc.vendor ? ` · ${doc.vendor}` : ''}</p>
+        <button
+          type="button"
+          onClick={() => setNotesOpen((v) => !v)}
+          aria-expanded={notesOpen}
+          aria-controls={`notes-${doc.id}`}
+          className={`mt-1.5 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset transition-colors duration-200 ${
+            notesOpen ? 'bg-secondary-500/15 text-secondary-100 ring-secondary-400/30' : 'text-slate-400 ring-white/10 hover:bg-white/5 hover:text-slate-200'
+          }`}
+        >
+          <StickyNote className="h-3 w-3" aria-hidden="true" />
+          {doc.note_count ? `${doc.note_count} ${doc.note_count === 1 ? 'nota' : 'notas'}` : 'Añadir nota'}
+          {doc.next_reminder && (
+            <span className={`inline-flex items-center gap-0.5 ${overdue ? 'text-accent-200' : 'text-secondary-200'}`}>
+              · <BellRing className="h-3 w-3" aria-hidden="true" />
+              {overdue ? 'vencido ' : ''}{new Date(`${doc.next_reminder}T00:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+            </span>
+          )}
+        </button>
       </td>
       <td className="py-3 pr-4 text-slate-300">
         <p>{doc.campaign ?? '—'}</p>
@@ -72,6 +101,14 @@ function Row({ doc, farmName, onChanged, onError }) {
         )}
       </td>
     </tr>
+    {notesOpen && (
+      <tr id={`notes-${doc.id}`}>
+        <td colSpan={COLUMNS} className="pb-4 pt-0">
+          <DocumentNotes document={doc} onChanged={onChanged} />
+        </td>
+      </tr>
+    )}
+    </Fragment>
   )
 }
 

@@ -10,6 +10,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 from sqlalchemy import extract, func, select
 
+import finance
 from deps import DbSession, FarmerUser, get_owned_farm
 from models import Document, DocumentType, Farm, SensorReading, Task, TaskStatus
 from schemas import AnalyticsKpis, AnalyticsOverview, MonthlySpendPoint, WaterMoisturePoint
@@ -81,9 +82,9 @@ def overview(
     ytd = sum(p.this_year for p in inputs_spend if p.month <= current_month)
     prev_ytd = sum(p.last_year for p in inputs_spend if p.month <= current_month)
 
-    farms = db.execute(
-        select(func.count(Farm.id), func.sum(Farm.surface_ha), func.sum(Farm.budget_total), func.sum(Farm.budget_spent)).where(farm_scope)
-    ).one()
+    farms = db.execute(select(func.count(Farm.id), func.sum(Farm.surface_ha), func.sum(Farm.budget_total)).where(farm_scope)).one()
+    # Presupuesto consumido = costes registrados + facturas + gasto declarado: mismo cálculo que la vista económica.
+    budget_consumed = finance.consumed(db, list(db.scalars(farm_ids)), year)
     pending = db.scalar(
         select(func.count(Task.id)).where(Task.farm_id.in_(farm_ids), Task.status != TaskStatus.DONE)
     )
@@ -115,6 +116,6 @@ def overview(
             inputs_spend_ytd=round(ytd, 2),
             inputs_spend_prev_ytd=round(prev_ytd, 2),
             budget_total=round(_f(farms[2]), 2),
-            budget_spent=round(_f(farms[3]), 2),
+            budget_spent=budget_consumed,
         ),
     )

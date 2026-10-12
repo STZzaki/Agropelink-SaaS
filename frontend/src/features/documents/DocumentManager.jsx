@@ -105,7 +105,7 @@ function metaErrors(m) {
  * Gestor documental del agricultor: subida con metadatos OBLIGATORIOS (granja, cosecha, año y tipo)
  * y archivo organizado en carpetas Finca → Año → Cosecha.
  */
-export default function DocumentManager({ farms }) {
+export default function DocumentManager({ farms, notesKey = 0, onNotesChanged }) {
   const folders = useApi((signal) => documentsApi.folders({ signal }))
   const [selection, setSelection] = useState({})
   const [q, setQ] = useState('')
@@ -129,6 +129,10 @@ export default function DocumentManager({ farms }) {
     reloadDocs()
     reloadFolders()
   }, [reloadDocs, reloadFolders])
+  // Un recordatorio marcado como hecho fuera de la tabla actualiza el resumen de notas de cada fila.
+  useEffect(() => {
+    if (notesKey) reloadDocs()
+  }, [notesKey, reloadDocs])
   useEffect(() => {
     window.addEventListener(DOCUMENT_FILED_EVENT, refresh)
     return () => window.removeEventListener(DOCUMENT_FILED_EVENT, refresh)
@@ -231,7 +235,7 @@ export default function DocumentManager({ farms }) {
           }
         >
           {docs.error ? <Alert variant="error" onRetry={docs.reload}>{docs.error}</Alert> : !docs.data ? <LoadingBlock /> : (
-            <DocumentTable documents={docs.data.items} farms={farms} filtered={Object.keys(selection).length > 0 || q.trim().length > 1} onChanged={refresh} />
+            <DocumentTable documents={docs.data.items} farms={farms} filtered={Object.keys(selection).length > 0 || q.trim().length > 1} onChanged={() => { refresh(); onNotesChanged?.() }} />
           )}
           {docs.data && docs.data.total > PAGE_SIZE && (
             <div className="mt-4 flex items-center justify-between text-sm text-slate-400">

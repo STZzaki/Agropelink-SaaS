@@ -1,6 +1,62 @@
+import { Cpu, GraduationCap, MapPin, Rocket, Settings2 } from 'lucide-react'
 import Reveal from './Reveal.jsx'
 import SectionHeading from './SectionHeading.jsx'
 import { ChartIcon, SensorIcon, ShieldIcon, SparkIcon } from './icons.jsx'
+
+// Quiénes somos: solo hechos confirmados por el equipo (origen, formación y propósito).
+const ORIGIN = [
+  { icon: MapPin, label: 'Origen', value: 'Nacidos en Almería, la huerta de Europa' },
+  { icon: GraduationCap, label: 'Formación', value: 'Ingeniería de Organización Industrial · ETSI, Universidad de Sevilla' },
+]
+
+const PURPOSE = [
+  { icon: Cpu, verb: 'Digitalizar', text: 'Llevar el dato del campo a una sola plataforma, sin papeles ni hojas sueltas.' },
+  { icon: Settings2, verb: 'Optimizar', text: 'Aplicar la ingeniería de procesos al riego, los insumos y el trabajo diario.' },
+  { icon: Rocket, verb: 'Modernizar', text: 'Acercar sensores e IA a cualquier explotación, sea cual sea su tamaño.' },
+]
+
+function WhoWeAre() {
+  return (
+    <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
+      <Reveal>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-300">Quiénes somos</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Un equipo joven de Almería, con la vista puesta en el campo</h2>
+        <p className="mt-5 text-base leading-relaxed text-slate-300">
+          Somos estudiantes de Ingeniería de Organización Industrial en la Escuela Técnica Superior de Ingeniería de la Universidad de Sevilla.
+          Crecimos rodeados de invernaderos y sabemos lo que cuesta sacar adelante una campaña.
+        </p>
+        <p className="mt-4 text-base leading-relaxed text-slate-400">
+          Agropelink nace con un propósito claro: digitalizar, optimizar y modernizar el sector agrícola, poniendo la ingeniería al servicio de quien trabaja la tierra.
+        </p>
+        <dl className="mt-8 space-y-3">
+          {ORIGIN.map((o) => (
+            <div key={o.label} className="flex items-start gap-3 rounded-2xl bg-white/[0.03] p-4 shadow-surface-sm">
+              <o.icon className="mt-0.5 h-5 w-5 shrink-0 text-secondary-300" aria-hidden="true" strokeWidth={1.75} />
+              <div>
+                <dt className="text-xs font-medium text-slate-500">{o.label}</dt>
+                <dd className="text-sm font-medium text-slate-100">{o.value}</dd>
+              </div>
+            </div>
+          ))}
+        </dl>
+      </Reveal>
+
+      <ol className="grid content-center gap-4" aria-label="Nuestro propósito">
+        {PURPOSE.map((p, i) => (
+          <Reveal as="li" key={p.verb} delay={i * 80} className="surface flex gap-4 rounded-2xl p-5 sm:p-6">
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500/20 to-secondary-500/20 text-secondary-200 ring-1 ring-inset ring-white/10">
+              <p.icon className="h-5 w-5" aria-hidden="true" strokeWidth={1.75} />
+            </span>
+            <div>
+              <p className="font-semibold text-white"><span className="mr-2 tabular-nums text-slate-500">0{i + 1}</span>{p.verb}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-400">{p.text}</p>
+            </div>
+          </Reveal>
+        ))}
+      </ol>
+    </div>
+  )
+}
 
 const PILLARS = [
   {
@@ -51,6 +107,9 @@ export default function AboutSection() {
   return (
     <section id="nosotros" className="relative scroll-mt-24 border-t border-white/5 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <WhoWeAre />
+
+        <hr className="my-20 border-white/5 sm:my-28" />
         <SectionHeading
           eyebrow="Qué es Agropelink"
           title="La capa digital que le faltaba a la agricultura intensiva"

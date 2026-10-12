@@ -8,6 +8,7 @@ import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { LoadingBlock } from '../components/ui/Spinner.jsx'
 import FarmerApplicationForm from '../features/applications/FarmerApplicationForm.jsx'
+import AssignedTasks from '../features/workers/AssignedTasks.jsx'
 import { categoryById, timeAgo } from '../features/forum/forumMeta.js'
 import useApi from '../hooks/useApi.js'
 
@@ -57,6 +58,10 @@ export default function PortalPage() {
         <WeatherWidget />
         <FuelWidget />
       </section>
+
+      <div className="mt-8">
+        <AssignedTasks />
+      </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-5">
         <Card title="Conviértete en Agricultor Agropelink" className="lg:col-span-3">

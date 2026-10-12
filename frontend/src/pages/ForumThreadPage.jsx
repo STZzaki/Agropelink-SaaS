@@ -5,20 +5,34 @@ import { useAuth } from '../auth/AuthContext.jsx'
 import Avatar from '../components/ui/Avatar.jsx'
 import AdminPostTools from '../features/forum/AdminPostTools.jsx'
 import MediaGallery from '../features/forum/MediaGallery.jsx'
+import ReactionBar from '../features/forum/ReactionBar.jsx'
+import ReplyComposer from '../features/forum/ReplyComposer.jsx'
 import ReportDialog from '../features/forum/ReportDialog.jsx'
-import { categoryById, formatDate, timeAgo } from '../features/forum/forumMeta.js'
+import { categoryById, formatDate, splitMentions, timeAgo } from '../features/forum/forumMeta.js'
 import usePageMeta from '../hooks/usePageMeta.js'
 import { ArrowLeft, Flag } from 'lucide-react'
 
-function Post({ author, date, body, highlight, onReport, media, adminTools }) {
+/** Texto plano con las menciones confirmadas por el servidor resaltadas (React escapa todo lo demás). */
+function Body({ text, mentions }) {
+  return (
+    <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-300 sm:text-base">
+      {splitMentions(text, mentions).map((part, i) =>
+        part.mention ? <span key={i} className="rounded bg-secondary-500/15 px-0.5 font-semibold text-secondary-200">{part.text}</span> : part.text,
+      )}
+    </p>
+  )
+}
+
+function Post({ author, date, body, mentions, highlight, onReport, media, adminTools, reactionBar }) {
   return (
     <article className={`rounded-2xl border p-5 sm:p-6 ${highlight ? 'border-secondary-400/25 bg-secondary-500/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
-      <header className="flex items-center gap-3">
+      {/* Nombre AL LADO del avatar, en la misma línea que la fecha. */}
+      <header className="flex items-center gap-2.5">
         <Avatar avatar={author.avatar} name={author.name} />
-        <div>
-          <p className="text-sm font-semibold text-white">{author.name}</p>
+        <p className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+          <span className="truncate text-sm font-semibold text-white">{author.name}</span>
           <time dateTime={date} title={formatDate(date)} className="text-xs text-slate-500">{timeAgo(date)}</time>
-        </div>
+        </p>
         {onReport && (
           <button
             type="button"
@@ -30,9 +44,9 @@ function Post({ author, date, body, highlight, onReport, media, adminTools }) {
           </button>
         )}
       </header>
-      {/* Texto plano: React escapa el contenido de los usuarios. */}
-      <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-300 sm:text-base">{body}</p>
+      <Body text={body} mentions={mentions} />
       <MediaGallery media={media} />
+      {reactionBar}
       {adminTools}
     </article>
   )
@@ -45,9 +59,6 @@ export default function ForumThreadPage() {
   const [thread, setThread] = useState(null)
   const [state, setState] = useState('loading')
   const [error, setError] = useState(null)
-  const [reply, setReply] = useState('')
-  const [sending, setSending] = useState(false)
-  const [replyError, setReplyError] = useState(null)
   const [reportTarget, setReportTarget] = useState(null)
   // Se puede denunciar cualquier publicación ajena (con sesión iniciada).
   // Visible en toda publicación ajena; sin sesión lleva al login y vuelve a este tema.
@@ -91,25 +102,21 @@ export default function ForumThreadPage() {
     return () => controller.abort()
   }, [id])
 
-  async function handleReply(e) {
-    e.preventDefault()
-    const body = reply.trim()
-    if (body.length < 2) {
-      setReplyError('Escribe una respuesta.')
-      return
-    }
-    setSending(true)
-    setReplyError(null)
-    try {
-      const created = await forumApi.reply(thread.id, { body })
-      setThread((t) => ({ ...t, replies: [...t.replies, created], last_activity_at: created.created_at }))
-      setReply('')
-    } catch (err) {
-      setReplyError(getErrorMessage(err))
-    } finally {
-      setSending(false)
-    }
-  }
+  const requireLogin = () => navigate('/login', { state: { from: location.pathname } })
+  const reactionBar = (replyId, reactions) => (
+    <ReactionBar
+      threadId={thread.id}
+      replyId={replyId}
+      reactions={reactions}
+      canReact={status === 'authenticated'}
+      onRequireLogin={requireLogin}
+      onChange={(next) =>
+        setThread((t) =>
+          replyId === null ? { ...t, reactions: next } : { ...t, replies: t.replies.map((r) => (r.id === replyId ? { ...r, reactions: next } : r)) },
+        )
+      }
+    />
+  )
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
@@ -147,13 +154,29 @@ export default function ForumThreadPage() {
                 author={thread.author}
                 date={thread.created_at}
                 body={thread.body}
+                mentions={thread.mentions}
                 media={thread.media}
+                reactionBar={reactionBar(null, thread.reactions)}
                 highlight
                 onReport={reportable(thread.author) ? () => openReport({ threadId: thread.id, author: thread.author.name }) : undefined}
                 adminTools={tools('thread', thread.id, thread.author, () => navigate('/foro', { replace: true }))}
               />
+              <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6">
+                {status === 'authenticated' ? (
+                  <ReplyComposer
+                    threadId={thread.id}
+                    onPosted={(created) => setThread((t) => ({ ...t, replies: [created, ...t.replies], last_activity_at: created.created_at }))}
+                  />
+                ) : (
+                  <p className="text-center text-sm text-slate-400">
+                    <Link to="/login" state={{ from: location.pathname }} className="font-semibold text-secondary-300 hover:text-secondary-200">Inicia sesión</Link>{' '}
+                    o <Link to="/register" state={{ from: location.pathname }} className="font-semibold text-secondary-300 hover:text-secondary-200">crea una cuenta</Link> para responder.
+                  </p>
+                )}
+              </div>
               <h2 className="pt-4 text-sm font-semibold text-slate-300">
                 {thread.replies.length} {thread.replies.length === 1 ? 'respuesta' : 'respuestas'}
+                {thread.replies.length > 1 && <span className="ml-2 font-normal text-slate-500">· más recientes primero</span>}
               </h2>
               {thread.replies.map((r) => (
                 <Post
@@ -161,41 +184,15 @@ export default function ForumThreadPage() {
                   author={r.author}
                   date={r.created_at}
                   body={r.body}
+                  mentions={r.mentions}
+                  media={r.media}
+                  reactionBar={reactionBar(r.id, r.reactions)}
                   onReport={reportable(r.author) ? () => openReport({ threadId: thread.id, replyId: r.id, author: r.author.name }) : undefined}
                   adminTools={tools('reply', r.id, r.author, () => setThread((t) => ({ ...t, replies: t.replies.filter((x) => x.id !== r.id) })))}
                 />
               ))}
             </div>
 
-            <div className="mt-8 rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6">
-              {status === 'authenticated' ? (
-                <form onSubmit={handleReply} noValidate>
-                  <label htmlFor="reply" className="text-sm font-medium text-slate-300">Tu respuesta</label>
-                  <textarea
-                    id="reply"
-                    rows={4}
-                    maxLength={3000}
-                    value={reply}
-                    onChange={(e) => setReply(e.target.value)}
-                    className="mt-2 block w-full resize-y rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:border-secondary-400/60 focus:outline-none focus:ring-2 focus:ring-secondary-400/20"
-                    placeholder="Comparte tu experiencia…"
-                  />
-                  {replyError && <p role="alert" className="mt-2 text-xs font-medium text-accent-300">{replyError}</p>}
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">{reply.length}/3000</span>
-                    <button type="submit" disabled={sending} className="btn-primary h-10 px-5 text-sm">
-                      {sending && <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-950/30 border-t-slate-950" aria-hidden="true" />}
-                      Responder
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <p className="text-center text-sm text-slate-400">
-                  <Link to="/login" state={{ from: location.pathname }} className="font-semibold text-secondary-300 hover:text-secondary-200">Inicia sesión</Link>{' '}
-                  o <Link to="/register" state={{ from: location.pathname }} className="font-semibold text-secondary-300 hover:text-secondary-200">crea una cuenta</Link> para responder.
-                </p>
-              )}
-            </div>
           </>
         )
       })()}

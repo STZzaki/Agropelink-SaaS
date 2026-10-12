@@ -19,7 +19,14 @@ function DocOutcome({ message }) {
   )
 }
 
-export default function ChatMessage({ message, farms, farmsLoading, onApprove, onReject, onDocDone, onDocDiscarded }) {
+/** Negritas «**texto**» del agente como <strong>. Todo es texto: React lo escapa (nunca HTML del modelo). */
+function RichText({ text }) {
+  return text.split(/(\*\*[^*\n]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong> : part,
+  )
+}
+
+export default function ChatMessage({ message, farms, workers, farmsLoading, onApprove, onReject, onDocDone, onDocDiscarded }) {
   const isUser = message.role === 'user'
   const wide = message.action || message.draft || message.docProposal
 
@@ -39,7 +46,7 @@ export default function ChatMessage({ message, farms, farmsLoading, onApprove, o
           }`}
         >
           {/* Texto plano: React escapa el contenido; nunca dangerouslySetInnerHTML (también con salida del LLM). */}
-          {message.text}
+          {isUser ? message.text : <RichText text={message.text} />}
           {message.attachment && (
             <span className="mt-2 flex items-center gap-1.5 rounded-lg bg-white/15 px-2 py-1 text-xs">
               <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="m15 7-6.5 6.5a2.1 2.1 0 0 0 3 3L18 10a4 4 0 0 0-5.7-5.7l-6.5 6.6a6 6 0 0 0 8.5 8.5L20 13" /></svg>
@@ -52,6 +59,7 @@ export default function ChatMessage({ message, farms, farmsLoading, onApprove, o
               status={message.actionStatus}
               error={message.actionError}
               farms={farms}
+              workers={workers}
               farmsLoading={farmsLoading}
               onApprove={(details) => onApprove(message.id, details)}
               onReject={() => onReject(message.id)}

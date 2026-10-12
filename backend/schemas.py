@@ -8,7 +8,7 @@ import datetime as dt
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_serializer, field_validator, model_validator
 from pydantic_core import PydanticCustomError
 
 from models import (
@@ -24,6 +24,7 @@ from models import (
     UserRole,
 )
 from sanitize import clean_text
+from sensor_catalog import SensorKind
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 Password = Annotated[str, StringConstraints(min_length=8, max_length=128)]
@@ -98,6 +99,17 @@ class UserResponse(ResponseSchema):
     # Moderación: advertencias acumuladas y advertencia oficial pendiente de aceptar (bloquea el panel con un modal).
     warnings_count: int = 0
     pending_warning_ack: bool = False
+    # Cuándo caducan las faltas vigentes si no hay nuevas infracciones (None si no tiene).
+    warnings_expire_at: UtcDatetime | None = None
+    last_warning_at: dt.datetime | None = Field(default=None, exclude=True)
+
+    @model_validator(mode="after")
+    def _expiry(self) -> "UserResponse":
+        if self.warnings_count and self.last_warning_at:
+            from config import get_settings  # import diferido: schemas no depende de la configuración al cargarse
+
+            self.warnings_expire_at = self.last_warning_at + dt.timedelta(hours=get_settings().moderation_warning_ttl_hours)
+        return self
 
 
 # --- Farm ---------------------------------------------------------------------
@@ -126,6 +138,145 @@ class FarmInput(InputSchema):
     registry: Annotated[str, StringConstraints(strip_whitespace=True, max_length=40), AfterValidator(lambda v: clean_text(v, multiline=False))] | None = None
 
 
+HarvestMode = Literal["single", "multiple"]
+ExpenseCategory = Literal[
+    "seeds", "fertilizers", "phytosanitary", "water", "energy", "fuel", "labor", "machinery", "services", "other"
+]
+MAX_HARVESTS = 20
+Amount = Annotated[Decimal, Field(gt=0, le=100_000_000, max_digits=12, decimal_places=2)]
+HarvestDescription = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000), AfterValidator(clean_text)]
+ExpenseConcept = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120), AfterValidator(lambda v: clean_text(v, multiline=False))]
+
+
+class HarvestIn(InputSchema):
+    """Cosecha: dimensiones, nº de plantas y periodo. La duración se calcula a partir de las fechas."""
+
+    name: FarmLabel
+    surface_ha: Measure | None = None
+    length_m: Measure | None = None
+    width_m: Measure | None = None
+    plant_count: Annotated[int, Field(ge=0, le=100_000_000)] | None = None
+    start_date: dt.date | None = None
+    end_date: dt.date | None = None
+    description: HarvestDescription | None = None
+
+    @model_validator(mode="after")
+    def _period(self) -> "HarvestIn":
+        if self.start_date and self.end_date:
+            if self.end_date < self.start_date:
+                raise PydanticCustomError("harvest_period", "La fecha de fin no puede ser anterior a la de inicio.")
+            if (self.end_date - self.start_date).days > 3 * 366:
+                raise PydanticCustomError("harvest_period", "El periodo de cosecha no puede superar 3 años.")
+        return self
+
+
+def _plausible_expense_date(value: dt.date) -> dt.date:
+    today = dt.date.today()
+    if value.year < 2000 or value > today + dt.timedelta(days=366):
+        raise PydanticCustomError("expense_date", "Fecha fuera de rango (desde el año 2000 hasta un año vista).")
+    return value
+
+
+ExpenseDate = Annotated[dt.date, AfterValidator(_plausible_expense_date)]
+
+
+class FixedCostIn(InputSchema):
+    """Coste fijo inicial en el alta. `harvest_index`: posición de la cosecha en la lista `harvests` del alta."""
+
+    category: ExpenseCategory
+    concept: ExpenseConcept
+    amount: Amount
+    incurred_on: ExpenseDate | None = None
+    harvest_index: Annotated[int, Field(ge=0, lt=MAX_HARVESTS)] | None = None
+
+
+class ExpenseCreate(InputSchema):
+    category: ExpenseCategory
+    concept: ExpenseConcept
+    amount: Amount
+    incurred_on: ExpenseDate
+    is_fixed: bool = False
+    harvest_id: PositiveId | None = None
+
+
+class HarvestResponse(ResponseSchema):
+    id: int
+    farm_id: int
+    name: str
+    surface_ha: float | None
+    length_m: float | None
+    width_m: float | None
+    plant_count: int | None
+    start_date: dt.date | None
+    end_date: dt.date | None
+    description: str | None
+    duration_days: int | None = None
+
+    @model_validator(mode="after")
+    def _duration(self) -> "HarvestResponse":
+        if self.start_date and self.end_date:
+            self.duration_days = (self.end_date - self.start_date).days + 1
+        return self
+
+
+class ExpenseResponse(ResponseSchema):
+    id: int
+    farm_id: int
+    harvest_id: int | None
+    category: str
+    concept: str
+    amount: float
+    incurred_on: dt.date
+    is_fixed: bool
+
+
+class FinanceAmount(BaseModel):
+    key: str
+    amount: float
+
+
+class FinanceQuarter(BaseModel):
+    quarter: int
+    fixed: float
+    variable: float
+    invoices: float
+
+
+class FinanceYear(BaseModel):
+    year: int
+    amount: float
+
+
+class FinanceHarvest(BaseModel):
+    harvest_id: int | None
+    name: str
+    amount: float
+    surface_ha: float | None
+    cost_per_ha: float | None
+
+
+class FinanceBudget(BaseModel):
+    total: float | None
+    fixed: float
+    variable: float
+    invoices: float
+    declared: float  # gasto declarado a mano en fichas antiguas (sin desglose)
+    consumed: float
+    remaining: float | None
+    consumed_pct: float | None
+
+
+class FinanceOverview(BaseModel):
+    farm_id: int
+    year: int
+    budget: FinanceBudget
+    by_quarter: list[FinanceQuarter]
+    by_category: list[FinanceAmount]
+    by_harvest: list[FinanceHarvest]
+    by_year: list[FinanceYear]
+    undated_invoices: int
+
+
 class FarmProfile(InputSchema):
     """Ficha ampliada de la explotación (asistente multipaso). Todos los campos son opcionales."""
 
@@ -140,6 +291,7 @@ class FarmProfile(InputSchema):
     inputs: Annotated[list[FarmInput], Field(max_length=100)] = []
     budget_total: Money | None = None
     budget_spent: Money | None = None
+    harvest_mode: HarvestMode | None = None
 
     @field_validator("crop_types", "labs")
     @classmethod
@@ -155,6 +307,18 @@ class FarmCreate(FarmProfile):
     # `owner_id` se toma del usuario autenticado, no del cuerpo de la petición.
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
     location: ShortText
+    harvest_mode: HarvestMode = "single"
+    harvests: Annotated[list[HarvestIn], Field(max_length=MAX_HARVESTS)] = []
+    fixed_costs: Annotated[list[FixedCostIn], Field(max_length=50)] = []
+
+    @model_validator(mode="after")
+    def _harvests_match_mode(self) -> "FarmCreate":
+        if self.harvest_mode == "single" and len(self.harvests) > 1:
+            raise PydanticCustomError("harvest_mode", "Con cosecha única solo se puede definir una cosecha.")
+        for cost in self.fixed_costs:
+            if cost.harvest_index is not None and cost.harvest_index >= len(self.harvests):
+                raise PydanticCustomError("harvest_index", "Un coste fijo hace referencia a una cosecha inexistente.")
+        return self
 
 
 class FarmUpdate(FarmProfile):
@@ -179,6 +343,7 @@ class FarmResponse(ResponseSchema):
     inputs: list[dict[str, str | None]] = []
     budget_total: float | None = None
     budget_spent: float | None = None
+    harvest_mode: str = "single"
 
     @field_validator("operators", "crop_types", "schedules", "labs", "inputs", mode="before")
     @classmethod
@@ -209,6 +374,63 @@ class SensorReadingResponse(ResponseSchema):
     water_liters: float | None
     soil_moisture_pct: float | None
     source: str
+
+
+# --- Sensores en directo ------------------------------------------------------------------------------
+
+class SensorCreate(InputSchema):
+    name: FarmLabel  # texto plano saneado, 1–80 caracteres
+    kind: SensorKind
+    zone: FarmLabel | None = None
+
+
+class SensorSampleIn(InputSchema):
+    value: Annotated[float, Field(allow_inf_nan=False)]
+    # Sin fecha = ahora. Con fecha: no futura (5 min de margen por desfase de reloj) ni de hace más de un año.
+    recorded_at: UtcDatetime | None = None
+
+    @field_validator("recorded_at")
+    @classmethod
+    def _plausible_time(cls, value: dt.datetime | None) -> dt.datetime | None:
+        if value is None:
+            return value
+        now = dt.datetime.now(dt.UTC)
+        if value > now + dt.timedelta(minutes=5):
+            raise PydanticCustomError("future_time", "La lectura no puede tener fecha futura.")
+        if value < now - dt.timedelta(days=366):
+            raise PydanticCustomError("too_old", "La lectura tiene más de un año.")
+        return value
+
+
+class SensorSamplesCreate(InputSchema):
+    samples: Annotated[list[SensorSampleIn], Field(min_length=1, max_length=500)]
+
+
+class SensorResponse(ResponseSchema):
+    id: int
+    farm_id: int
+    name: str
+    kind: str
+    label: str
+    unit: str
+    zone: str | None
+    optimal: tuple[float, float] | None
+    decimals: int
+    last_value: float | None
+    last_at: dt.datetime | None
+
+
+class SensorSeries(BaseModel):
+    sensor_id: int
+    # [instante UTC del tramo, media del tramo]
+    points: list[tuple[dt.datetime, float]]
+
+
+class SensorSeriesResponse(BaseModel):
+    hours: int
+    bucket_minutes: int
+    generated_at: dt.datetime
+    series: list[SensorSeries]
 
 
 class WaterMoisturePoint(BaseModel):
@@ -254,19 +476,61 @@ class DocumentFolder(BaseModel):
 # --- Task ---------------------------------------------------------------------
 
 
+TaskCategory = Literal["irrigation", "treatment", "planting", "pruning", "harvest", "maintenance", "fertilization", "other"]
+TaskDescription = Annotated[str, StringConstraints(strip_whitespace=True, max_length=10_000), AfterValidator(clean_text)]
+MAX_TASK_DAYS = 366
+
+
+class TaskCostIn(InputSchema):
+    """Gasto directo imputado a la tarea al crearla: se registra como coste variable de la finca."""
+
+    category: ExpenseCategory
+    concept: ExpenseConcept
+    amount: Amount
+
+
+def _check_span(start: dt.date | None, end: dt.date | None) -> None:
+    if start and end:
+        if end < start:
+            raise PydanticCustomError("task_span", "La fecha de fin no puede ser anterior a la de inicio.")
+        if (end - start).days >= MAX_TASK_DAYS:
+            raise PydanticCustomError("task_span", "Una tarea no puede durar más de un año.")
+
+
 class TaskCreate(InputSchema):
     title: Title
-    description: LongText | None = None
+    description: TaskDescription | None = None
     date: dt.date
+    end_date: dt.date | None = None
     status: TaskStatus = TaskStatus.PENDING
+    category: TaskCategory = "other"
     farm_id: PositiveId
+    worker_id: PositiveId | None = None
+    costs: Annotated[list[TaskCostIn], Field(max_length=20)] = []
+
+    @model_validator(mode="after")
+    def _span(self) -> "TaskCreate":
+        _check_span(self.date, self.end_date)
+        return self
 
 
 class TaskUpdate(InputSchema):
     title: Title | None = None
-    description: LongText | None = None
+    description: TaskDescription | None = None
     date: dt.date | None = None
+    end_date: dt.date | None = None
     status: TaskStatus | None = None
+    category: TaskCategory | None = None
+    worker_id: PositiveId | None = None
+
+
+class TaskAttachmentResponse(ResponseSchema):
+    id: int
+    kind: str
+    original_name: str
+    content_type: str
+    size_bytes: int
+    created_at: dt.datetime
 
 
 class TaskResponse(ResponseSchema):
@@ -274,8 +538,87 @@ class TaskResponse(ResponseSchema):
     title: str
     description: str | None
     date: dt.date
+    end_date: dt.date | None = None
     status: TaskStatus
+    category: str = "other"
     farm_id: int
+    worker_id: int | None = None
+    attachments: list[TaskAttachmentResponse] = []
+    direct_cost: float = 0
+
+
+class AssignedTaskResponse(TaskResponse):
+    """Vista del trabajador: sin costes; con el nombre de la finca y del responsable."""
+
+    farm_name: str
+    employer_name: str
+    direct_cost: float = Field(default=0, exclude=True)
+
+
+# --- Trabajadores ---------------------------------------------------------------------------------------
+
+WorkerPosition = Literal["manager", "laborer", "tractor_driver", "applicator", "technician", "admin", "other"]
+Weekday = Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+ClockTime = Annotated[str, StringConstraints(pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")]
+
+
+class WorkerSchedule(InputSchema):
+    days: Annotated[list[Weekday], Field(min_length=1, max_length=7)]
+    start: ClockTime
+    end: ClockTime
+
+    @model_validator(mode="after")
+    def _order(self) -> "WorkerSchedule":
+        if self.end <= self.start:
+            raise PydanticCustomError("schedule", "La hora de salida debe ser posterior a la de entrada.")
+        self.days = list(dict.fromkeys(self.days))
+        return self
+
+
+class WorkerIn(InputSchema):
+    name: Name
+    position: WorkerPosition
+    monthly_salary: Annotated[Decimal, Field(ge=0, le=1_000_000, max_digits=10, decimal_places=2)] | None = None
+    hourly_cost: Annotated[Decimal, Field(ge=0, le=10_000, max_digits=8, decimal_places=2)] | None = None
+    schedule: WorkerSchedule | None = None
+    active: bool = True
+
+    @field_validator("name")
+    @classmethod
+    def _plain(cls, value: str) -> str:
+        return clean_text(value, multiline=False)
+
+
+class WorkerResponse(ResponseSchema):
+    id: int
+    name: str
+    position: str
+    monthly_salary: float | None
+    hourly_cost: float | None
+    schedule: dict[str, object] | None
+    active: bool
+    linked: bool = False
+    linked_account_name: str | None = None
+    invite_pending: bool = False
+    open_tasks: int = 0
+
+
+class WorkerInvite(BaseModel):
+    code: str
+    expires_at: dt.datetime
+
+
+class WorkerLinkRequest(InputSchema):
+    code: Annotated[str, StringConstraints(strip_whitespace=True, min_length=8, max_length=32)]
+
+
+class AssignedStatusUpdate(InputSchema):
+    status: TaskStatus
+
+
+class WorkerLinkResponse(BaseModel):
+    worker_id: int
+    employer_name: str
 
 
 # --- Document -----------------------------------------------------------------
@@ -346,6 +689,55 @@ class DocumentResponse(ResponseSchema):
     farm_id: int
     is_draft: bool
     created_at: UtcDatetime | None
+    # Notas personales: cuántas tiene y el próximo recordatorio pendiente (para la tabla del archivo).
+    note_count: int = 0
+    next_reminder: dt.date | None = None
+
+
+def _clean_note(value: str) -> str:
+    cleaned = clean_text(value).strip()
+    if not cleaned:  # p. ej. una nota formada solo por HTML: tras sanear no queda texto
+        raise PydanticCustomError("note_empty", "La nota no tiene texto una vez eliminado el formato no permitido.")
+    return cleaned
+
+
+NoteBody = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000), AfterValidator(_clean_note)]
+
+
+def _plausible_reminder(value: dt.date | None) -> dt.date | None:
+    if value is not None and not (2000 <= value.year <= dt.date.today().year + 10):
+        raise PydanticCustomError("remind_on", "Fecha de recordatorio fuera de rango.")
+    return value
+
+
+ReminderDate = Annotated[dt.date | None, AfterValidator(_plausible_reminder)]
+
+
+class DocumentNoteCreate(InputSchema):
+    body: NoteBody
+    remind_on: ReminderDate = None
+
+
+class DocumentNoteUpdate(InputSchema):
+    body: NoteBody | None = None
+    remind_on: ReminderDate = None
+    done: bool | None = None
+
+
+class DocumentNoteResponse(ResponseSchema):
+    id: int
+    document_id: int
+    body: str
+    remind_on: dt.date | None
+    done: bool
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
+
+
+class DocumentReminder(DocumentNoteResponse):
+    reference: str | None
+    filename: str
+    overdue: bool
 
 
 class DocumentList(BaseModel):
@@ -396,11 +788,31 @@ class AgentChatRequest(InputSchema):
 
 
 class CreateTaskAction(BaseModel):
-    """Acción propuesta por el agente. Nunca se ejecuta sin aprobación humana."""
+    """Acción propuesta por el agente. Nunca se ejecuta sin aprobación humana (la tarjeta permite corregirla)."""
 
     type: Literal["create_task"] = "create_task"
     title: Title
     description: LongText | None = None
+    category: TaskCategory = "other"
+    date: dt.date | None = None
+    end_date: dt.date | None = None
+    farm_id: PositiveId | None = None
+    worker_id: PositiveId | None = None
+
+
+class RegisterExpenseAction(BaseModel):
+    """Gasto propuesto por el agente («he gastado 120 € en abono»); se registra solo si el usuario lo confirma."""
+
+    type: Literal["register_expense"] = "register_expense"
+    farm_id: PositiveId | None = None
+    category: ExpenseCategory
+    concept: ExpenseConcept
+    amount: Amount
+    incurred_on: dt.date
+
+    @field_serializer("amount")
+    def _amount_as_number(self, value: Decimal) -> float:
+        return float(value)
 
 
 class FileDocumentAction(BaseModel):
@@ -412,7 +824,22 @@ class FileDocumentAction(BaseModel):
 
 class AgentChatResponse(BaseModel):
     reply: str
-    action: Annotated[CreateTaskAction | FileDocumentAction, Field(discriminator="type")] | None = None
+    action: Annotated[CreateTaskAction | FileDocumentAction | RegisterExpenseAction, Field(discriminator="type")] | None = None
+    # Motor que ha respondido: local · ollama · gemini (la interfaz indica si los datos salen del servidor).
+    engine: str = "local"
+
+
+class BriefingItem(BaseModel):
+    level: Literal["alert", "warning", "info", "ok"]
+    area: str
+    text: str
+    link: str | None = None
+
+
+class AgentBriefing(BaseModel):
+    generated_at: UtcDatetime
+    engine: str
+    items: list[BriefingItem]
 
 
 # --- Contact (landing pública) ------------------------------------------------
@@ -515,9 +942,16 @@ class MessageResponse(BaseModel):
 Tag = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=24, pattern=r"^[\wÀ-ÿ\- ]+$")]
 
 
+# Reacciones: lista CERRADA de identificadores (el emoji lo pinta el frontend). "like" es el «Me gusta».
+ReactionKind = Literal["like", "heart", "laugh", "wow", "thanks", "sprout"]
+Mentions = Annotated[list[PositiveId], Field(max_length=10)]
+
+
 class ForumThreadCreate(InputSchema):
     # Imágenes/vídeos subidos antes con POST /forum/upload (máx. 4, solo del propio autor y sin usar).
     media_ids: Annotated[list[PositiveId], Field(max_length=4)] = []
+    # Usuarios mencionados (@Nombre): el servidor comprueba que el nombre aparece en el texto.
+    mentions: Mentions = []
     category: ForumCategory
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=8, max_length=160)]
     body: Annotated[str, StringConstraints(strip_whitespace=True, min_length=20, max_length=5000)]
@@ -534,6 +968,20 @@ class ForumThreadCreate(InputSchema):
 
 class ForumReplyCreate(InputSchema):
     body: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=3000)]
+    # Fotos subidas antes con POST /forum/upload (máx. 4, solo imágenes, propias y sin usar).
+    media_ids: Annotated[list[PositiveId], Field(max_length=4)] = []
+    mentions: Mentions = []
+
+
+class ForumReactionToggle(InputSchema):
+    thread_id: PositiveId
+    reply_id: PositiveId | None = None
+    kind: ReactionKind
+
+
+class ForumReactions(BaseModel):
+    counts: dict[str, int] = {}
+    mine: list[str] = []
 
 
 class ForumReportCreate(InputSchema):
@@ -565,6 +1013,24 @@ class ForumReplyResponse(ResponseSchema):
     body: str
     created_at: UtcDatetime
     author: ForumAuthor
+    media: list[ForumMediaResponse] = []
+    reactions: ForumReactions = ForumReactions()
+    mentions: list[ForumAuthor] = []
+
+
+class ForumMentionItem(BaseModel):
+    id: int
+    thread_id: int
+    thread_title: str
+    reply_id: int | None
+    actor: ForumAuthor
+    created_at: UtcDatetime
+    read: bool
+
+
+class ForumMentionList(BaseModel):
+    items: list[ForumMentionItem]
+    unread: int
 
 
 class ForumThreadSummary(BaseModel):
@@ -595,6 +1061,9 @@ class ForumThreadDetail(ResponseSchema):
     created_at: UtcDatetime
     last_activity_at: UtcDatetime
     media: list[ForumMediaResponse] = []
+    reactions: ForumReactions = ForumReactions()
+    mentions: list[ForumAuthor] = []
+    # Más recientes primero.
     replies: list[ForumReplyResponse]
 
 

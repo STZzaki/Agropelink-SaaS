@@ -76,7 +76,7 @@ export function WaterMoistureChart({ data, demo, emptyHint }) {
               <XAxis dataKey="date" {...AXIS} tickFormatter={shortDate} minTickGap={24} />
               <YAxis {...AXIS} width={52} domain={[0, 'auto']} tickFormatter={(v) => `${v} %`} />
               <Tooltip cursor={{ stroke: 'rgb(255 255 255 / 0.25)' }} content={<ChartTooltip labelFormatter={shortDate} valueFormatter={(v) => `${fmt(v)} %`} />} />
-              <Line type="monotone" dataKey="soil_moisture_pct" name="Humedad" stroke={CHART.moisture} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: '#0c171a' }} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="soil_moisture_pct" name="Humedad" stroke={CHART.moisture} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: '#1c2623' }} connectNulls isAnimationActive={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -122,7 +122,7 @@ export function InputsSpendChart({ data, year, demo, emptyHint }) {
               <Tooltip cursor={{ stroke: 'rgb(255 255 255 / 0.25)' }} content={<ChartTooltip valueFormatter={(v) => fmtEuro(v)} />} />
               <Legend verticalAlign="top" align="right" height={28} iconType="plainline" wrapperStyle={{ fontSize: 12, color: CHART.ink }} formatter={(v) => <span className="text-slate-300">{v}</span>} />
               <Area type="monotone" dataKey="last_year" name={String(year - 1)} stroke={CHART.lastYear} strokeWidth={2} strokeDasharray="5 4" fill="none" dot={false} isAnimationActive={false} />
-              <Area type="monotone" dataKey="this_year" name={String(year)} stroke={CHART.thisYear} strokeWidth={2} fill="url(#spend-this)" dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: '#0c171a' }} isAnimationActive={false} />
+              <Area type="monotone" dataKey="this_year" name={String(year)} stroke={CHART.thisYear} strokeWidth={2} fill="url(#spend-this)" dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: '#1c2623' }} isAnimationActive={false} />
             </AreaChart>
           </ResponsiveContainer>
         </div>

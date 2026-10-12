@@ -144,7 +144,7 @@ export default function SensorChart() {
         <line x1={active.x} x2={active.x} y1={PAD.top} y2={H - PAD.bottom} stroke="white" strokeOpacity={hover !== null ? 0.25 : 0} />
         <g data-chart-dot>
           <circle cx={active.x} cy={active.y} r="6" fill={sensor.color} fillOpacity="0.25" />
-          <circle cx={active.x} cy={active.y} r="3.5" fill={sensor.color} stroke="#020617" strokeWidth="1.5" />
+          <circle cx={active.x} cy={active.y} r="3.5" fill={sensor.color} stroke="#131c19" strokeWidth="1.5" />
         </g>
       </svg>
       <p className="mt-1 text-[11px] text-slate-500">Datos de demostración · pasa el cursor o el dedo por el gráfico</p>

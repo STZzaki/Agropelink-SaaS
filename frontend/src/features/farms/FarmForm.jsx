@@ -4,14 +4,16 @@ import { FORUM_MEDIA, farmsApi, getErrorMessage } from '../../api.js'
 import Alert from '../../components/ui/Alert.jsx'
 import Button from '../../components/ui/Button.jsx'
 import FormField, { inputClass, optionClass } from '../../components/ui/FormField.jsx'
-import { ImagePlus } from 'lucide-react'
+import { ImagePlus, Plus, Trash2 } from 'lucide-react'
+import HarvestFields, { EMPTY_HARVEST, harvestPayload, validateHarvest } from '../economy/HarvestFields.jsx'
+import { EXPENSE_CATEGORIES, money, parseAmount } from '../economy/economyMeta.js'
 
 const STEPS = [
   { id: 'base', title: 'Instalación', hint: 'Nombre, ubicación y foto' },
   { id: 'team', title: 'Dimensiones y equipo', hint: 'Superficie, trabajadores y operarios' },
-  { id: 'crops', title: 'Producción', hint: 'Cosechas y programaciones' },
+  { id: 'crops', title: 'Producción', hint: 'Cosecha única o varias: dimensiones, plantas y periodo de cada una' },
   { id: 'inputs', title: 'Laboratorios e insumos', hint: 'Laboratorios, fitosanitarios y fermentos' },
-  { id: 'budget', title: 'Presupuesto y resumen', hint: 'Presupuesto consumido y revisión' },
+  { id: 'budget', title: 'Presupuesto y costes fijos', hint: 'Presupuesto anual, costes iniciales (semillas, fertilizantes…) y revisión' },
 ]
 const FREQUENCIES = [
   { id: 'daily', label: 'Diaria' },
@@ -29,8 +31,15 @@ const SLIDE = { initial: { opacity: 0, x: 16 }, animate: { opacity: 1, x: 0 }, e
 
 const EMPTY = {
   name: '', location: '', surface_ha: '', length_m: '', width_m: '', avg_workers: '',
-  operators: [], crop_types: [], schedules: [], labs: [], inputs: [], budget_total: '', budget_spent: '',
+  operators: [], crop_types: [], schedules: [], labs: [], inputs: [], budget_total: '',
+  harvest_mode: 'single', harvests: [{ ...EMPTY_HARVEST }], fixed_costs: [],
 }
+
+const MAX_HARVESTS = 20
+const MAX_FIXED_COSTS = 50
+const isBlankHarvest = (h) => Object.values(h).every((x) => String(x ?? '').trim() === '')
+// Cosechas que se envían: en cosecha única, la ficha vacía se ignora (la cosecha es opcional).
+const harvestsToSend = (v) => v.harvests.filter((h) => !(v.harvest_mode === 'single' && isBlankHarvest(h)))
 
 const num = (v) => (String(v ?? '').trim() === '' ? null : Number(String(v).replace(/\s/g, '').replace(',', '.')))
 
@@ -95,6 +104,31 @@ function RowsEditor({ legend, rows, onChange, columns, blank, max, addLabel }) {
   )
 }
 
+const MODES = [
+  { id: 'single', title: 'Cosecha única', text: 'Un solo cultivo y ciclo en toda la finca.' },
+  { id: 'multiple', title: 'Varias cosechas', text: 'Cultivos o ciclos distintos, cada uno con su superficie, plantas y costes.' },
+]
+
+/** Cosecha única o múltiple: grupo de radios nativo con aspecto de tarjeta (teclado y lector de pantalla). */
+function HarvestModePicker({ value, onChange }) {
+  return (
+    <fieldset>
+      <legend className="mb-2 text-sm font-medium text-slate-300">¿Cuántas cosechas tiene la finca?</legend>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {MODES.map((mode) => (
+          <label key={mode.id} className="relative cursor-pointer">
+            <input type="radio" name="harvest_mode" value={mode.id} checked={value === mode.id} onChange={() => onChange(mode.id)} className="peer sr-only" />
+            <span className="block rounded-2xl bg-white/[0.03] p-4 ring-1 ring-inset ring-white/10 transition-colors duration-300 hover:bg-white/[0.05] peer-checked:bg-secondary-500/10 peer-checked:ring-secondary-300/50 peer-focus-visible:ring-2 peer-focus-visible:ring-secondary-300">
+              <span className="block font-semibold text-white">{mode.title}</span>
+              <span className="mt-0.5 block text-xs text-slate-400">{mode.text}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
 function PhotoPicker({ file, onChange, error }) {
   const inputRef = useRef(null)
   const [preview, setPreview] = useState(null)
@@ -140,19 +174,28 @@ function validateStep(step, v, photo) {
     if (w !== null && (!Number.isInteger(w) || w < 0)) e.avg_workers = 'Número entero de trabajadores.'
     if (v.operators.some((o) => !o.name.trim() || !o.position.trim())) e.operators = 'Completa nombre y puesto de cada operario (o quita la fila).'
   }
-  if (step === 2 && v.schedules.some((s) => !s.name.trim())) e.schedules = 'Pon nombre a cada programación.'
+  if (step === 2) {
+    if (v.schedules.some((s) => !s.name.trim())) e.schedules = 'Pon nombre a cada programación.'
+    const sent = harvestsToSend(v)
+    const perHarvest = v.harvests.map((h) => (sent.includes(h) ? validateHarvest(h) : {}))
+    if (perHarvest.some((x) => Object.keys(x).length)) e.harvests = perHarvest
+  }
   if (step === 3 && v.inputs.some((i) => !i.name.trim())) e.inputs = 'Pon nombre a cada producto.'
   if (step === 4) {
-    const t = num(v.budget_total)
-    const s = num(v.budget_spent)
+    const t = parseAmount(v.budget_total)
     if (t !== null && (!Number.isFinite(t) || t < 0)) e.budget_total = 'Importe no válido.'
-    if (s !== null && (!Number.isFinite(s) || s < 0)) e.budget_spent = 'Importe no válido.'
+    const bad = v.fixed_costs.some((c) => {
+      const a = parseAmount(c.amount)
+      return !c.concept.trim() || a === null || !Number.isFinite(a) || a <= 0
+    })
+    if (bad) e.fixed_costs = 'Cada coste fijo necesita concepto e importe mayor que 0 (o quita la fila).'
   }
   return e
 }
 
 function toPayload(v) {
   const trim = (s) => (s ?? '').trim()
+  const sent = harvestsToSend(v)
   return {
     name: trim(v.name),
     location: trim(v.location),
@@ -165,8 +208,14 @@ function toPayload(v) {
     schedules: v.schedules.map((s) => ({ name: trim(s.name), frequency: s.frequency, notes: trim(s.notes) || null })),
     labs: v.labs,
     inputs: v.inputs.map((i) => ({ name: trim(i.name), kind: i.kind, registry: trim(i.registry) || null })),
-    budget_total: num(v.budget_total),
-    budget_spent: num(v.budget_spent),
+    budget_total: parseAmount(v.budget_total),
+    harvest_mode: v.harvest_mode,
+    harvests: sent.map(harvestPayload),
+    fixed_costs: v.fixed_costs.map((c) => {
+      // Índice dentro de las cosechas QUE SE ENVÍAN (una cosecha única vacía no se envía).
+      const index = c.harvest === '' ? -1 : sent.indexOf(v.harvests[Number(c.harvest)])
+      return { category: c.category, concept: trim(c.concept), amount: parseAmount(c.amount), harvest_index: index >= 0 ? index : null }
+    }),
   }
 }
 
@@ -193,6 +242,40 @@ export default function FarmForm({ onCreated }) {
     setValues((v) => ({ ...v, [field]: list }))
     if (errors[field]) setErrors((er) => ({ ...er, [field]: undefined }))
   }
+  const setHarvest = (i, harvest) => setList('harvests')(values.harvests.map((h, j) => (j === i ? harvest : h)))
+  // Al quitar una cosecha, sus costes pasan a «toda la finca» y los índices posteriores se corrigen.
+  function removeHarvest(i) {
+    setValues((v) => ({
+      ...v,
+      harvests: v.harvests.filter((_, j) => j !== i),
+      fixed_costs: v.fixed_costs.map((c) => {
+        if (c.harvest === '') return c
+        const k = Number(c.harvest)
+        return { ...c, harvest: k === i ? '' : k > i ? String(k - 1) : c.harvest }
+      }),
+    }))
+    setErrors((er) => ({ ...er, harvests: undefined }))
+  }
+  // Pasar a cosecha única conserva solo la primera cosecha (y sus costes imputados).
+  function changeMode(mode) {
+    setValues((v) => ({
+      ...v,
+      harvest_mode: mode,
+      harvests: mode === 'single' ? v.harvests.slice(0, 1) : v.harvests,
+      fixed_costs: mode === 'single' ? v.fixed_costs.map((c) => (c.harvest !== '' && c.harvest !== '0' ? { ...c, harvest: '' } : c)) : v.fixed_costs,
+    }))
+    setErrors((er) => ({ ...er, harvests: undefined }))
+  }
+  const harvestOptions = [
+    { id: '', label: 'Toda la finca' },
+    ...values.harvests.map((h, i) => ({ id: String(i), label: h.name.trim() || `Cosecha ${i + 1}` })),
+  ]
+  const fixedTotal = values.fixed_costs.reduce((sum, c) => {
+    const a = parseAmount(c.amount)
+    return sum + (Number.isFinite(a) && a > 0 ? a : 0)
+  }, 0)
+  const budgetValue = parseAmount(values.budget_total) ?? 0
+
   const field = (name, label, props = {}) => (
     <FormField id={`ff-${name}`} label={label} error={errors[name]}>
       <input id={`ff-${name}`} value={values[name]} onChange={set(name)} className={inputClass} aria-invalid={errors[name] ? true : undefined} aria-describedby={errors[name] ? `ff-${name}-error` : undefined} {...props} />
@@ -286,7 +369,30 @@ export default function FarmForm({ onCreated }) {
             )}
             {step === 2 && (
               <>
-                <TagInput id="ff-crops" label="Tipo de cosechas" values={v.crop_types} onChange={setList('crop_types')} placeholder="Tomate, pimiento… (Enter para añadir)" max={30} />
+                <HarvestModePicker value={v.harvest_mode} onChange={changeMode} />
+                <ol className="space-y-4" aria-label="Cosechas">
+                  {v.harvests.map((h, i) => (
+                    <li key={i} className="pop-in rounded-2xl bg-white/[0.02] p-4 ring-1 ring-inset ring-white/[0.06]">
+                      {v.harvest_mode === 'multiple' ? (
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-sm font-semibold text-slate-200">Cosecha {i + 1}</p>
+                          {v.harvests.length > 1 && (
+                            <button type="button" onClick={() => removeHarvest(i)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-slate-400 hover:bg-white/5 hover:text-accent-200">
+                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Quitar
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="mb-3 text-xs text-slate-500">Opcional: si aún no la tienes planificada, déjala en blanco y añádela después desde Economía.</p>
+                      )}
+                      <HarvestFields idPrefix={`ff-h${i}`} value={h} onChange={(nh) => setHarvest(i, nh)} errors={errors.harvests?.[i]} />
+                    </li>
+                  ))}
+                </ol>
+                {v.harvest_mode === 'multiple' && v.harvests.length < MAX_HARVESTS && (
+                  <Button variant="outline" onClick={() => setList('harvests')([...v.harvests, { ...EMPTY_HARVEST }])}><Plus className="h-4 w-4" aria-hidden="true" /> Añadir cosecha</Button>
+                )}
+                <TagInput id="ff-crops" label="Etiquetas de cultivo (para buscar y filtrar)" values={v.crop_types} onChange={setList('crop_types')} placeholder="Tomate, pimiento… (Enter para añadir)" max={30} />
                 <RowsEditor
                   legend="Programaciones"
                   rows={v.schedules}
@@ -325,16 +431,37 @@ export default function FarmForm({ onCreated }) {
             {step === 4 && (
               <>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {field('budget_total', 'Presupuesto de la campaña (€)', { inputMode: 'decimal', placeholder: '50.000' })}
-                  {field('budget_spent', 'Presupuesto consumido (€)', { inputMode: 'decimal', placeholder: '12.500' })}
+                  {field('budget_total', 'Presupuesto anual (€)', { inputMode: 'decimal', placeholder: '50.000' })}
+                  <div className="rounded-xl bg-white/[0.03] px-4 py-3 text-sm">
+                    <p className="text-xs text-slate-500">Costes fijos iniciales</p>
+                    <p className="font-semibold tabular-nums text-white">{money(fixedTotal)}</p>
+                    {budgetValue > 0 && <p className="text-xs text-slate-400">{((fixedTotal / budgetValue) * 100).toLocaleString('es-ES', { maximumFractionDigits: 1 })} % del presupuesto anual</p>}
+                  </div>
                 </div>
+                <RowsEditor
+                  legend="Costes fijos iniciales"
+                  rows={v.fixed_costs}
+                  onChange={setList('fixed_costs')}
+                  max={MAX_FIXED_COSTS}
+                  blank={{ category: 'seeds', concept: '', amount: '', harvest: '' }}
+                  addLabel="+ Añadir coste fijo"
+                  columns={[
+                    { key: 'category', label: 'Categoría', type: 'select', options: EXPENSE_CATEGORIES },
+                    { key: 'concept', label: 'Concepto', placeholder: 'Semilla tomate rama', maxLength: 120 },
+                    { key: 'amount', label: 'Importe (€)', placeholder: '1.200,00', maxLength: 16 },
+                    { key: 'harvest', label: 'Imputar a', type: 'select', options: harvestOptions },
+                  ]}
+                />
+                <p className="text-xs text-slate-500">Se registran con fecha de hoy como costes fijos. Después podrás añadir costes variables desde Economía.</p>
+                {errors.fixed_costs && <p className="field-error text-xs font-medium text-accent-300">{errors.fixed_costs}</p>}
                 <dl className="grid gap-3 rounded-xl bg-white/[0.02] p-4 text-sm ring-1 ring-inset ring-white/[0.06] sm:grid-cols-2">
                   {[
                     ['Granja', `${v.name || '—'} · ${v.location || '—'}`],
                     ['Foto', photo ? photo.name : 'Sin foto'],
                     ['Dimensiones', [num(v.surface_ha) && `${v.surface_ha} ha`, num(v.length_m) && num(v.width_m) && `${v.length_m} × ${v.width_m} m`].filter(Boolean).join(' · ') || '—'],
                     ['Equipo', `${v.avg_workers || 0} trabajadores · ${v.operators.length} operarios`],
-                    ['Cosechas', v.crop_types.join(', ') || '—'],
+                    ['Cosechas', v.harvest_mode === 'single' ? `Cosecha única${harvestsToSend(v)[0] ? ` · ${harvestsToSend(v)[0].name}` : ''}` : `${v.harvests.length} cosechas`],
+                    ['Costes fijos', `${v.fixed_costs.length} · ${money(fixedTotal)}`],
                     ['Programaciones', String(v.schedules.length)],
                     ['Laboratorios', v.labs.join(', ') || '—'],
                     ['Insumos', String(v.inputs.length)],

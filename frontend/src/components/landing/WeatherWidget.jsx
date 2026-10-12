@@ -78,8 +78,15 @@ function PlacePicker({ value, onChange }) {
   )
 }
 
-export default function WeatherWidget() {
-  const [placeId, setPlaceId] = useState(PLACES[0].id)
+/** Provincia del catálogo cuyo nombre aparece en un texto libre (p. ej. la ubicación de una finca). */
+export function placeFromText(text = '') {
+  const plain = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return PLACES.find((p) => plain(text).includes(plain(p.label)))?.id ?? null
+}
+
+/** `defaultPlace`: provincia inicial (p. ej. la de la finca seleccionada); el usuario puede cambiarla. */
+export default function WeatherWidget({ defaultPlace = null }) {
+  const [placeId, setPlaceId] = useState(PLACES.some((p) => p.id === defaultPlace) ? defaultPlace : PLACES[0].id)
   const [data, setData] = useState(null)
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)

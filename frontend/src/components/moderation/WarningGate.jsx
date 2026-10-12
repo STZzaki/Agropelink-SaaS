@@ -3,7 +3,7 @@ import { getErrorMessage, usersApi } from '../../api.js'
 import { useAuth } from '../../auth/AuthContext.jsx'
 
 export const WARNING_TEXT =
-  'Has recibido una advertencia oficial por incumplimiento de las normas de la comunidad. Reincidir supondrá la expulsión permanente de Agropelink.'
+  'Has recibido una advertencia oficial por incumplimiento de las normas de la comunidad. A la tercera falta la cuenta se suspende de forma permanente; las faltas caducan tras 72 horas sin infracciones.'
 
 /**
  * Modal obligatorio de advertencia oficial. Mientras `pending_warning_ack` sea true, `showModal()` deja el resto
@@ -55,7 +55,7 @@ export default function WarningGate() {
         <h2 id="warning-title" className="mt-5 text-xl font-semibold text-white">Advertencia oficial</h2>
         <p id="warning-text" className="mt-3 text-sm leading-relaxed text-slate-300">{WARNING_TEXT}</p>
         <p className="mt-3 text-xs text-slate-500">
-          Advertencias registradas en tu cuenta: {user.warnings_count}. Puedes consultar las normas en las{' '}
+          Faltas vigentes: {user.warnings_count} de 3. Puedes consultar las normas en las{' '}
           <a href="/terminos" target="_blank" rel="noopener" className="underline underline-offset-2 hover:text-slate-300">condiciones de uso</a>.
         </p>
         {error && <p role="alert" className="mt-4 rounded-xl border border-accent-400/30 bg-accent-500/10 px-4 py-3 text-sm text-accent-100">{error}</p>}

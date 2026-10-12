@@ -203,6 +203,7 @@ def unban(user_id: int, db: DbSession, admin: AdminUser) -> AdminUserRow:
     user.banned_at = None
     user.ban_reason = None
     user.warnings_count = 0
+    user.last_warning_at = None
     user.pending_warning_ack = False
     db.add(
         ModerationEvent(

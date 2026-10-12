@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { forumApi, getErrorMessage } from '../api.js'
 import { useAuth } from '../auth/AuthContext.jsx'
 import Avatar from '../components/ui/Avatar.jsx'
+import MentionsInbox from '../features/forum/MentionsInbox.jsx'
 import NewThreadModal from '../features/forum/NewThreadModal.jsx'
 import { FORUM_CATEGORIES, categoryById, timeAgo } from '../features/forum/forumMeta.js'
 import usePageMeta from '../hooks/usePageMeta.js'
@@ -18,7 +19,6 @@ function ThreadCard({ thread }) {
         to={`/foro/${thread.id}`}
         className="surface-interactive group flex gap-4 rounded-2xl p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-400 sm:p-6"
       >
-        <Avatar avatar={thread.author.avatar} name={thread.author.name} className="!hidden !h-10 !w-10 sm:!inline-flex" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${cat.bg} ${cat.text} ${cat.ring}`}>{cat.label}</span>
@@ -28,8 +28,13 @@ function ThreadCard({ thread }) {
           </div>
           <h3 className="mt-2 font-semibold text-white group-hover:text-secondary-200">{thread.title}</h3>
           <p className="mt-1 line-clamp-2 text-sm text-slate-400">{thread.excerpt}</p>
-          <p className="mt-3 text-xs text-slate-500">
-            <span className="text-slate-300">{thread.author.name}</span> · {timeAgo(thread.created_at)}
+          <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-500">
+            {/* Avatar y nombre en la misma línea */}
+            <span className="inline-flex items-center gap-1.5">
+              <Avatar avatar={thread.author.avatar} name={thread.author.name} className="!h-6 !w-6 text-[10px]" />
+              <span className="font-medium text-slate-300">{thread.author.name}</span>
+            </span>
+            · {timeAgo(thread.created_at)}
             {thread.last_activity_at !== thread.created_at && <> · última actividad {timeAgo(thread.last_activity_at)}</>}
             {thread.media_count > 0 && (
               <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[11px] text-slate-400">
@@ -151,6 +156,7 @@ export default function ForumPage() {
                 )
               })}
             </nav>
+            {status === 'authenticated' && <MentionsInbox />}
           </aside>
 
           <div>

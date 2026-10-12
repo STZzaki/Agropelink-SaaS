@@ -286,10 +286,38 @@ class TestForumSecurity:
         assert ack.status_code == 200 and ack.json()["pending_warning_ack"] is False and ack.json()["warnings_count"] == 1
         assert _thread(c).status_code == 201
 
+        # 2.ª falta: segunda advertencia (aún no hay bloqueo) y la fecha de caducidad se renueva.
         second = _thread(c, body="Vaya panda de i.m.b.e.c.i.l.e.s que hay en este foro de verdad")
-        assert second.status_code == 403  # reincidencia tras la advertencia → expulsión permanente
+        assert second.status_code == 400
+        me = c.get("/api/v1/auth/me").json()
+        assert me["warnings_count"] == 2 and me["warnings_expire_at"] is not None
+        c.post("/api/v1/users/acknowledge-warning")
+
+        third = _thread(c, body="Sois todos unos gilipollas, no sabéis ni regar")
+        assert third.status_code == 403  # 3.ª falta → expulsión permanente
         assert c.get("/api/v1/auth/me").status_code == 403  # middleware global: cuenta bloqueada
         assert c.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD}).status_code == 403
+
+    def test_warnings_expire_after_quiet_period(self, _app):
+        """72 h sin infracciones: las faltas caducan, el contador vuelve a 0 y vuelve a poder publicar."""
+        import datetime as dt
+
+        from database import SessionLocal
+        from models import User
+
+        c, email = make_user(_app, "Rehabilitado", UserRole.USER)
+        assert _thread(c, body="Eres una puta vergüenza, eso no funciona en ningún invernadero").status_code == 400
+        assert _thread(c).status_code == 403  # advertencia pendiente de aceptar
+        with SessionLocal() as db:
+            u = db.query(User).filter(User.email == email).one()
+            u.last_warning_at = u.last_warning_at - dt.timedelta(hours=73)
+            db.commit()
+        me = c.get("/api/v1/auth/me").json()
+        assert me["warnings_count"] == 0 and me["pending_warning_ack"] is False and me["warnings_expire_at"] is None
+        assert _thread(c).status_code == 201
+        # Tras caducar, una nueva falta vuelve a ser solo la primera advertencia (no bloqueo).
+        assert _thread(c, body="Menudo i.m.b.e.c.i.l que eres").status_code == 400
+        assert c.get("/api/v1/auth/me").json()["warnings_count"] == 1
 
     def test_reply_with_profanity_is_blocked_before_saving(self, user, std_user):
         thread_id = _thread(user).json()["id"]

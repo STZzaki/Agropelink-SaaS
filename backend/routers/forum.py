@@ -1,4 +1,5 @@
 import datetime as dt
+from collections import defaultdict
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Query, Response, UploadFile, status
@@ -10,7 +11,18 @@ from sqlalchemy.orm import selectinload
 from utils import moderation
 import forum_media
 from deps import AdminUser, CurrentUser, DbSession, OptionalUser
-from models import ForumCategory, ForumMedia, ForumReply, ForumReport, ForumThread, ModerationAction, ModerationEvent
+from models import (
+    ForumCategory,
+    ForumMedia,
+    ForumMention,
+    ForumReaction,
+    ForumReply,
+    ForumReport,
+    ForumThread,
+    ModerationAction,
+    ModerationEvent,
+    User,
+)
 from notifications import send_admin_notification
 from ratelimit import SlidingWindowLimiter
 from sanitize import clean_text
@@ -18,6 +30,10 @@ from schemas import (
     ForumAuthor,
     ForumCategoryStat,
     ForumMediaResponse,
+    ForumMentionItem,
+    ForumMentionList,
+    ForumReactions,
+    ForumReactionToggle,
     ForumReplyCreate,
     ForumReplyResponse,
     ForumReportCreate,
@@ -35,6 +51,8 @@ router = APIRouter(prefix="/forum", tags=["forum"])
 _posts_by_user = SlidingWindowLimiter(10, 10 * 60, "Estás publicando muy rápido. Espera unos minutos.")
 _reports_by_user = SlidingWindowLimiter(10, 60 * 60, "Has enviado demasiadas denuncias. Inténtalo más tarde.")
 _uploads_by_user = SlidingWindowLimiter(20, 60 * 60, "Has subido demasiados archivos. Inténtalo más tarde.")
+_reactions_by_user = SlidingWindowLimiter(120, 60, "Demasiadas reacciones seguidas. Espera un momento.")
+_mention_search = SlidingWindowLimiter(60, 60, "Demasiadas búsquedas seguidas. Espera un momento.")
 _UNATTACHED_TTL = dt.timedelta(hours=24)
 
 _VISIBLE_THREAD = ForumThread.deleted_at.is_(None)
@@ -87,6 +105,80 @@ def _visible_thread(db: DbSession, thread_id: int) -> ForumThread:
     return thread
 
 
+def _target(thread_id: int, reply_id: int | None) -> str:
+    return f"r:{reply_id}" if reply_id else f"t:{thread_id}"
+
+
+def _reactions(db: DbSession, thread_id: int, user: User | None) -> dict[str, ForumReactions]:
+    """Recuento por publicación y tipo (una consulta agregada) y las reacciones propias del visitante."""
+    result: dict[str, ForumReactions] = defaultdict(ForumReactions)
+    rows = db.execute(
+        select(ForumReaction.target, ForumReaction.kind, func.count(ForumReaction.id))
+        .where(ForumReaction.thread_id == thread_id)
+        .group_by(ForumReaction.target, ForumReaction.kind)
+    )
+    for target, kind, count in rows:
+        result[target].counts[kind] = count
+    if user is not None:
+        for target, kind in db.execute(
+            select(ForumReaction.target, ForumReaction.kind).where(ForumReaction.thread_id == thread_id, ForumReaction.user_id == user.id)
+        ):
+            result[target].mine.append(kind)
+    return result
+
+
+def _mentions(db: DbSession, thread_id: int) -> dict[str, list[ForumAuthor]]:
+    result: dict[str, list[ForumAuthor]] = defaultdict(list)
+    rows = db.execute(
+        select(ForumMention.reply_id, User).join(User, ForumMention.user_id == User.id).where(ForumMention.thread_id == thread_id)
+    )
+    for reply_id, user in rows:
+        key = _target(thread_id, reply_id)
+        if all(a.id != user.id for a in result[key]):
+            result[key].append(ForumAuthor.model_validate(user))
+    return result
+
+
+def _claim_media(db: DbSession, user: User, media_ids: list[int], *, images_only: bool) -> list[ForumMedia]:
+    """Solo archivos propios, ya validados por /forum/upload y todavía sin publicar (sin IDOR ni reutilización)."""
+    ids = list(dict.fromkeys(media_ids))
+    if not ids:
+        return []
+    media = list(
+        db.scalars(select(ForumMedia).where(ForumMedia.id.in_(ids), ForumMedia.uploader_id == user.id, ForumMedia.thread_id.is_(None)))
+    )
+    if len(media) != len(ids):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Algún archivo adjunto no es válido. Vuelve a subirlo.")
+    if images_only and any(m.kind != "image" for m in media):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="En las respuestas solo se pueden adjuntar fotos.")
+    return media
+
+
+def _record_mentions(db: DbSession, author: User, user_ids: list[int], text: str, thread_id: int, reply_id: int | None) -> None:
+    """Solo cuentan menciones reales: usuario existente, no bloqueado, distinto del autor y cuyo «@Nombre» aparece
+    en el texto ya saneado. El resto se ignora (no se puede notificar a alguien sin nombrarlo)."""
+    ids = [i for i in dict.fromkeys(user_ids) if i != author.id]
+    if not ids:
+        return
+    lowered = text.casefold()
+    now = utcnow()
+    for target in db.scalars(select(User).where(User.id.in_(ids), User.is_banned.is_(False))):
+        if f"@{target.name.casefold()}" in lowered:
+            db.add(ForumMention(user_id=target.id, actor_id=author.id, thread_id=thread_id, reply_id=reply_id, created_at=now))
+
+
+def _reply_response(reply: ForumReply, media: list[ForumMedia], reactions: ForumReactions, mentions: list[ForumAuthor]) -> ForumReplyResponse:
+    return ForumReplyResponse(
+        id=reply.id,
+        body=reply.body,
+        created_at=reply.created_at,
+        author=ForumAuthor.model_validate(reply.author),
+        media=[_media_response(m) for m in media],
+        reactions=reactions,
+        mentions=mentions,
+    )
+
+
 @router.get("/categories", response_model=list[ForumCategoryStat])
 def category_stats(db: DbSession) -> list[ForumCategoryStat]:
     counts = dict(
@@ -133,7 +225,7 @@ def list_threads(
 
 
 @router.get("/threads/{thread_id}", response_model=ForumThreadDetail)
-def get_thread(thread_id: int, db: DbSession) -> ForumThreadDetail:
+def get_thread(thread_id: int, db: DbSession, user: OptionalUser) -> ForumThreadDetail:
     thread = db.scalar(
         select(ForumThread)
         .options(selectinload(ForumThread.author), selectinload(ForumThread.replies).selectinload(ForumReply.author))
@@ -141,6 +233,13 @@ def get_thread(thread_id: int, db: DbSession) -> ForumThreadDetail:
     )
     if thread is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found")
+    media_by_reply: dict[int | None, list[ForumMedia]] = defaultdict(list)
+    for m in db.scalars(select(ForumMedia).where(ForumMedia.thread_id == thread.id).order_by(ForumMedia.id)):
+        media_by_reply[m.reply_id].append(m)
+    reactions = _reactions(db, thread.id, user)
+    mentions = _mentions(db, thread.id)
+    visible = [r for r in thread.replies if r.deleted_at is None]
+    visible.sort(key=lambda r: (r.created_at, r.id), reverse=True)  # más recientes primero
     return ForumThreadDetail(
         id=thread.id,
         category=thread.category,
@@ -150,11 +249,13 @@ def get_thread(thread_id: int, db: DbSession) -> ForumThreadDetail:
         author=ForumAuthor.model_validate(thread.author),
         created_at=thread.created_at,
         last_activity_at=thread.last_activity_at,
-        media=[
-            _media_response(m)
-            for m in db.scalars(select(ForumMedia).where(ForumMedia.thread_id == thread.id).order_by(ForumMedia.id))
+        media=[_media_response(m) for m in media_by_reply[None]],
+        reactions=reactions[_target(thread.id, None)],
+        mentions=mentions[_target(thread.id, None)],
+        replies=[
+            _reply_response(r, media_by_reply[r.id], reactions[_target(thread.id, r.id)], mentions[_target(thread.id, r.id)])
+            for r in visible
         ],
-        replies=[ForumReplyResponse.model_validate(r) for r in thread.replies if r.deleted_at is None],
     )
 
 
@@ -169,21 +270,7 @@ def create_thread(payload: ForumThreadCreate, db: DbSession, user: CurrentUser) 
     body = _require_length(clean_text(payload.body), 20, "body")
     tags = [t for t in (clean_text(tag, multiline=False) for tag in payload.tags) if len(t) >= 2]
 
-    # Solo archivos propios, ya validados por /forum/upload y todavía sin publicar (sin IDOR ni reutilización).
-    media_ids = list(dict.fromkeys(payload.media_ids))
-    media = []
-    if media_ids:
-        media = list(
-            db.scalars(
-                select(ForumMedia).where(
-                    ForumMedia.id.in_(media_ids), ForumMedia.uploader_id == user.id, ForumMedia.thread_id.is_(None)
-                )
-            )
-        )
-        if len(media) != len(media_ids):
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Algún archivo adjunto no es válido. Vuelve a subirlo."
-            )
+    media = _claim_media(db, user, payload.media_ids, images_only=False)
 
     now = utcnow()
     thread = ForumThread(
@@ -193,26 +280,101 @@ def create_thread(payload: ForumThreadCreate, db: DbSession, user: CurrentUser) 
     db.flush()
     for item in media:
         item.thread_id = thread.id
+    _record_mentions(db, user, payload.mentions, f"{title}\n{body}", thread.id, None)
     db.commit()
     db.refresh(thread)
     return _summary(thread, 0, len(media))
 
 
 @router.post("/threads/{thread_id}/replies", response_model=ForumReplyResponse, status_code=status.HTTP_201_CREATED)
-def create_reply(thread_id: int, payload: ForumReplyCreate, db: DbSession, user: CurrentUser) -> ForumReply:
+def create_reply(thread_id: int, payload: ForumReplyCreate, db: DbSession, user: CurrentUser) -> ForumReplyResponse:
     thread = _visible_thread(db, thread_id)
     moderation.require_no_pending_warning(user)
     _posts_by_user.hit(f"user:{user.id}")
     moderation.enforce(db, user, payload.body)
     body = _require_length(clean_text(payload.body), 2, "body")
+    media = _claim_media(db, user, payload.media_ids, images_only=True)
 
     now = utcnow()
     reply = ForumReply(thread_id=thread.id, author_id=user.id, body=body, created_at=now)
     thread.last_activity_at = now
     db.add(reply)
+    db.flush()
+    for item in media:
+        item.thread_id = thread.id
+        item.reply_id = reply.id
+    _record_mentions(db, user, payload.mentions, body, thread.id, reply.id)
     db.commit()
     db.refresh(reply)
-    return reply
+    return _reply_response(reply, media, ForumReactions(), _mentions(db, thread.id)[_target(thread.id, reply.id)])
+
+
+# --- Reacciones y menciones ---------------------------------------------------------------------------
+
+
+@router.put("/reactions", response_model=ForumReactions)
+def toggle_reaction(payload: ForumReactionToggle, db: DbSession, user: CurrentUser) -> ForumReactions:
+    """Activa o quita «Me gusta» o una reacción con emoji (lista cerrada) en un tema o una respuesta visibles."""
+    _reactions_by_user.hit(f"user:{user.id}")
+    thread = _visible_thread(db, payload.thread_id)
+    if payload.reply_id is not None and db.scalar(
+        select(ForumReply.id).where(ForumReply.id == payload.reply_id, ForumReply.thread_id == thread.id, _VISIBLE_REPLY)
+    ) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Reply not found")
+    target = _target(thread.id, payload.reply_id)
+    existing = db.scalar(select(ForumReaction).where(ForumReaction.user_id == user.id, ForumReaction.target == target, ForumReaction.kind == payload.kind))
+    if existing is not None:
+        db.delete(existing)
+    else:
+        db.add(ForumReaction(user_id=user.id, thread_id=thread.id, reply_id=payload.reply_id, target=target, kind=payload.kind, created_at=utcnow()))
+    try:
+        db.commit()
+    except IntegrityError:  # doble clic simultáneo: la reacción ya existe
+        db.rollback()
+    return _reactions(db, thread.id, user)[target]
+
+
+@router.get("/mentionable", response_model=list[ForumAuthor])
+def mentionable(db: DbSession, user: CurrentUser, q: Annotated[str, Query(min_length=1, max_length=50)]) -> list[User]:
+    """Autocompletado de @menciones: solo personas que ya participan en el foro (su nombre ya es público ahí)."""
+    _mention_search.hit(f"user:{user.id}")
+    authors = select(ForumThread.author_id).where(_VISIBLE_THREAD).union(select(ForumReply.author_id).where(_VISIBLE_REPLY))
+    stmt = (
+        select(User)
+        .where(User.id.in_(authors), User.id != user.id, User.is_banned.is_(False), User.name.contains(q.strip(), autoescape=True))
+        .order_by(User.name)
+        .limit(8)
+    )
+    return list(db.scalars(stmt))
+
+
+@router.get("/mentions", response_model=ForumMentionList)
+def my_mentions(db: DbSession, user: CurrentUser) -> ForumMentionList:
+    stmt = (
+        select(ForumMention)
+        .options(selectinload(ForumMention.actor), selectinload(ForumMention.thread))
+        .join(ForumThread, ForumMention.thread_id == ForumThread.id)
+        .where(ForumMention.user_id == user.id, _VISIBLE_THREAD)
+        .order_by(ForumMention.created_at.desc())
+        .limit(20)
+    )
+    items = [
+        ForumMentionItem(
+            id=m.id, thread_id=m.thread_id, thread_title=m.thread.title, reply_id=m.reply_id,
+            actor=ForumAuthor.model_validate(m.actor), created_at=m.created_at, read=m.read_at is not None,
+        )
+        for m in db.scalars(stmt)
+    ]
+    unread = db.scalar(select(func.count(ForumMention.id)).where(ForumMention.user_id == user.id, ForumMention.read_at.is_(None))) or 0
+    return ForumMentionList(items=items, unread=unread)
+
+
+@router.post("/mentions/read", status_code=status.HTTP_204_NO_CONTENT)
+def mark_mentions_read(db: DbSession, user: CurrentUser) -> Response:
+    for mention in db.scalars(select(ForumMention).where(ForumMention.user_id == user.id, ForumMention.read_at.is_(None))):
+        mention.read_at = utcnow()
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/reports", response_model=MessageResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -359,6 +521,8 @@ def get_media(storage_key: str, db: DbSession, user: OptionalUser) -> FileRespon
         visible = user is not None and user.id == item.uploader_id
     else:
         visible = db.scalar(select(ForumThread.id).where(ForumThread.id == item.thread_id, _VISIBLE_THREAD)) is not None
+        if visible and item.reply_id is not None:  # foto de una respuesta retirada por moderación: deja de servirse
+            visible = db.scalar(select(ForumReply.id).where(ForumReply.id == item.reply_id, _VISIBLE_REPLY)) is not None
     if not visible:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Media not found")
     return FileResponse(
@@ -404,10 +568,11 @@ def admin_delete_post(
             created_at=utcnow(),
         )
     )
-    if isinstance(target, ForumThread):
-        # Los archivos del tema se borran del disco (las filas caen en cascada con el tema).
-        for item in db.scalars(select(ForumMedia).where(ForumMedia.thread_id == target.id)):
-            forum_media.delete_media(item.storage_key)
+    # Los archivos se borran del disco (las filas caen con el tema o la respuesta).
+    owner = ForumMedia.thread_id == target.id if isinstance(target, ForumThread) else ForumMedia.reply_id == target.id
+    for item in db.scalars(select(ForumMedia).where(owner)):
+        forum_media.delete_media(item.storage_key)
+        db.delete(item)
     db.delete(target)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

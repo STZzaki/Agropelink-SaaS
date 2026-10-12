@@ -11,6 +11,7 @@ from config import get_settings
 from database import get_db
 from models import Farm, User, UserRole, UserSession
 from security import hash_token, utcnow
+from utils.moderation import expire_warnings
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -39,6 +40,8 @@ def _user_from_cookie(request: Request, db: Session) -> User | None:
     if user.is_banned:
         # Defensa en profundidad (el middleware global ya responde 403 antes de llegar aquí).
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=BANNED_DETAIL)
+    if expire_warnings(user):  # faltas caducadas (72 h sin infracciones): el contador vuelve a 0
+        db.commit()
     return user
 
 

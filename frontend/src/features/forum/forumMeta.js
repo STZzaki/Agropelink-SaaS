@@ -27,3 +27,28 @@ export function timeAgo(iso) {
 
 export const formatDate = (iso) =>
   new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+// Reacciones con emoji (lista cerrada, la misma que acepta el servidor). «Me gusta» va aparte con su icono.
+export const REACTIONS = [
+  { id: 'heart', emoji: '❤️', label: 'Me encanta' },
+  { id: 'laugh', emoji: '😂', label: 'Me hace gracia' },
+  { id: 'wow', emoji: '😮', label: 'Me sorprende' },
+  { id: 'thanks', emoji: '🙏', label: 'Gracias' },
+  { id: 'sprout', emoji: '🌱', label: 'Buena práctica' },
+]
+
+// Emojis que se pueden insertar en el texto de una respuesta (contenido del usuario, no iconos de la interfaz).
+export const COMPOSER_EMOJIS = ['👍', '👏', '🙏', '😊', '😂', '😮', '🤔', '❤️', '🌱', '🌿', '🍅', '🌶️', '🥒', '🍆', '🥬', '🍓', '🍋', '🌞', '🌧️', '💧', '🚜', '🐝', '🐛', '✅']
+
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** Trocea el texto para resaltar las menciones confirmadas por el servidor (`@Nombre`). React escapa el resto. */
+export function splitMentions(text, mentions = []) {
+  if (!mentions.length) return [{ text }]
+  const names = [...mentions].sort((a, b) => b.name.length - a.name.length)
+  const re = new RegExp(`(@(?:${names.map((m) => escapeRegExp(m.name)).join('|')}))`, 'giu')
+  return text.split(re).filter(Boolean).map((part) => {
+    const hit = names.find((m) => part.toLocaleLowerCase('es') === `@${m.name}`.toLocaleLowerCase('es'))
+    return hit ? { text: part, mention: hit } : { text: part }
+  })
+}

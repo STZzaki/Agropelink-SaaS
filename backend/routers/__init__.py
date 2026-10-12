@@ -1,9 +1,14 @@
 from fastapi import APIRouter
 
-from routers import admin, agent, analytics, applications, auth, contact, documents, farms, forum, market, support, tasks, users
+from routers import admin, agent, analytics, applications, assigned, auth, contact, documents, economy, farms, forum, market, sensors, siex, support, tasks, users, workers
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(farms.router)
+api_router.include_router(sensors.router)
+api_router.include_router(economy.router)
+api_router.include_router(workers.router)
+api_router.include_router(assigned.router)
+api_router.include_router(siex.router)
 api_router.include_router(tasks.router)
 api_router.include_router(documents.router)
 api_router.include_router(agent.router)

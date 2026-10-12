@@ -44,11 +44,11 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Cuenta:</strong> nombre, email, fecha de nacimiento (solo para verificar que eres mayor de 18 años; el servicio no está dirigido a menores) y contraseña (guardada solo como hash Argon2id; nunca en claro).</li>
           <li><strong>Moderación:</strong> advertencias y, en su caso, motivo y fecha de la suspensión de la cuenta por incumplir las normas del foro.</li>
-          <li><strong>Explotación:</strong> granjas y parcelas (dimensiones, cosechas, programaciones, laboratorios, insumos, presupuesto y foto de la instalación, sin metadatos de ubicación), lecturas de riego y humedad, tareas y documentos que subas (albaranes, facturas). Los documentos se clasifican en nuestro propio servidor, sin enviarlos a terceros.</li>
-          <li><strong>Equipo de la explotación:</strong> nombre y puesto de los operarios que el agricultor registre (sin datos de contacto ni identificadores). El agricultor es responsable de informar a sus trabajadores.</li>
+          <li><strong>Explotación:</strong> granjas y parcelas (dimensiones, cosechas, plantas, programaciones, laboratorios, insumos, presupuesto y foto de la instalación, sin metadatos de ubicación), sensores y sus lecturas, costes y gastos, tareas con sus adjuntos (fotos sin metadatos y PDF), documentos que subas (albaranes, facturas) y las notas y recordatorios que escribas sobre ellos. Los documentos se clasifican en nuestro propio servidor, sin enviarlos a terceros.</li>
+          <li><strong>Equipo de la explotación:</strong> nombre, puesto, sueldo, coste por hora y horario de los trabajadores que el agricultor registre (sin datos de contacto ni identificadores) y, si el trabajador lo acepta con un código de un solo uso, el vínculo con su cuenta para ver sus tareas asignadas. El trabajador nunca ve sueldos ni costes. El agricultor es responsable de informar a sus trabajadores.</li>
           <li><strong>Contacto:</strong> nombre, teléfono, email y mensaje del formulario.</li>
-          <li><strong>Foro:</strong> tu nombre público y lo que publiques. Tu email nunca se muestra.</li>
-          <li><strong>Asistente IA:</strong> los mensajes que escribas a Agropelink AI.</li>
+          <li><strong>Foro:</strong> tu nombre público, lo que publiques (incluidas fotos, sin metadatos), tus «Me gusta» y reacciones, y las menciones que hagas o recibas. Tu email nunca se muestra.</li>
+          <li><strong>Asistente IA:</strong> los mensajes que escribas a Agropelink AI y los datos de tu explotación que necesite para responderte.</li>
           <li><strong>Datos técnicos:</strong> cookie de sesión y dirección IP en registros de seguridad (p. ej. para frenar intentos de acceso por fuerza bruta).</li>
         </ul>
         <p>No tratamos categorías especiales de datos ni elaboramos perfiles con fines publicitarios.</p>
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Alojamiento e infraestructura:</strong> <LegalValue value={LEGAL.hosting} label="proveedor de hosting" />.</li>
           <li><strong>Correo electrónico:</strong> proveedor del buzón {SITE.email} para gestionar los contactos.</li>
-          <li><strong>Google (API de Gemini):</strong> procesa los mensajes del asistente Agropelink AI para generar respuestas.</li>
+          <li><strong>Asistente Agropelink AI:</strong> funciona en nuestros propios servidores; por defecto no envía tus mensajes ni los datos de tu explotación a ningún tercero. Solo si en el futuro activáramos un modelo externo (Google Gemini) se indicaría en el propio chat antes de usarlo, y recibiría únicamente el mínimo necesario para cada respuesta.</li>
           <li><strong>Elfsight:</strong> solo si aceptas el contenido de terceros, para mostrar el feed de Instagram.</li>
           <li><strong>Google Fonts y Open-Meteo:</strong> tu navegador les solicita tipografías y datos meteorológicos, lo que les comunica tu dirección IP.</li>
         </ul>
@@ -96,8 +96,8 @@ export default function PrivacyPage() {
 
       <Section id="ia" title="6. Transparencia en el uso de inteligencia artificial">
         <ul>
-          <li><strong>Uso voluntario y con tu consentimiento.</strong> El asistente solo se activa cuando abres el chat y le escribes; no analiza tu cuenta por su cuenta ni en segundo plano.</li>
-          <li><strong>Sabrás cuándo hablas con una IA.</strong> Agropelink AI es un asistente automático basado en un modelo de lenguaje de Google (Gemini) y se identifica siempre como tal.</li>
+          <li><strong>Uso voluntario.</strong> El asistente responde cuando le escribes. El «resumen del día» del panel se calcula al abrir esa página, en nuestro servidor y solo con tus datos; no hay análisis en segundo plano ni perfiles.</li>
+          <li><strong>Sabrás cuándo hablas con una IA.</strong> Agropelink AI es un asistente automático que se identifica siempre como tal. Por defecto usa un motor propio (reglas sobre tus datos y, si está disponible, un modelo abierto alojado en nuestra infraestructura); el chat indica en todo momento si tus datos salen o no de nuestros servidores.</li>
           <li><strong>Supervisión humana obligatoria.</strong> El asistente solo propone acciones (por ejemplo, crear una tarea). Ninguna se ejecuta sin tu aprobación expresa en la tarjeta «Confirmación requerida».</li>
           <li><strong>Sin decisiones automatizadas</strong> con efectos jurídicos o significativos sobre ti (art. 22 RGPD).</li>
           <li><strong>Recomendaciones orientativas.</strong> Las respuestas pueden contener errores y no sustituyen el criterio de un técnico o asesor acreditado.</li>

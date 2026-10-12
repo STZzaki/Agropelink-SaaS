@@ -6,6 +6,7 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import { LoadingBlock } from '../components/ui/Spinner.jsx'
 import AIDocumentProcessor from '../features/documents/AIDocumentProcessor.jsx'
 import DocumentManager from '../features/documents/DocumentManager.jsx'
+import RemindersPanel from '../features/documents/RemindersPanel.jsx'
 import useApi from '../hooks/useApi.js'
 
 const TABS = [
@@ -19,6 +20,8 @@ export default function DocumentsPage() {
   const farms = useApi((signal) => farmsApi.list({ limit: 100 }, { signal }))
   const facets = useApi((signal) => documentsApi.facets({ signal }))
   const [version, setVersion] = useState(0) // remonta el archivo tras archivar desde el procesador
+  const [tableNotes, setTableNotes] = useState(0) // notas cambiadas en la tabla → recargar recordatorios
+  const [panelNotes, setPanelNotes] = useState(0) // recordatorio hecho en el panel → recargar la tabla
   const farmList = farms.data ?? []
 
   return (
@@ -49,7 +52,10 @@ export default function DocumentsPage() {
           Primero crea una granja con el <Link to="/farms/nueva" className="font-semibold underline">asistente de alta</Link>.
         </Alert>
       ) : tab === 'archivo' ? (
-        <DocumentManager key={version} farms={farmList} />
+        <>
+          <RemindersPanel refreshKey={tableNotes} onChanged={() => setPanelNotes((n) => n + 1)} />
+          <DocumentManager key={version} farms={farmList} notesKey={panelNotes} onNotesChanged={() => setTableNotes((n) => n + 1)} />
+        </>
       ) : (
         <AIDocumentProcessor farms={farmList} campaigns={facets.data?.campaigns ?? []} onFiled={() => setVersion((v) => v + 1)} />
       )}

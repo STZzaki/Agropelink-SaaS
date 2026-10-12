@@ -10,11 +10,20 @@ settings = get_settings()
 
 _is_sqlite = settings.database_url.startswith("sqlite")
 
-engine = create_engine(
-    settings.database_url,
-    # SQLite solo permite por defecto el hilo que creó la conexión; FastAPI usa varios.
-    connect_args={"check_same_thread": False} if _is_sqlite else {},
-)
+
+def _engine_options() -> dict:
+    if _is_sqlite:
+        # SQLite solo permite por defecto el hilo que creó la conexión; FastAPI usa varios.
+        return {"connect_args": {"check_same_thread": False}}
+    # MySQL / TiDB (mysql+pymysql://...): comprobar la conexión antes de usarla y renovarla antes de que el
+    # servidor cierre las inactivas. TiDB Cloud exige TLS: CA en DATABASE_SSL_CA (se verifica el certificado).
+    options: dict = {"pool_pre_ping": True, "pool_recycle": 280, "pool_size": 5, "max_overflow": 10}
+    if settings.database_ssl_ca:
+        options["connect_args"] = {"ssl": {"ca": settings.database_ssl_ca, "check_hostname": True}}
+    return options
+
+
+engine = create_engine(settings.database_url, **_engine_options())
 
 if _is_sqlite:
 

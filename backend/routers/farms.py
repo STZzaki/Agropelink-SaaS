@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Annotated, Any
 
 from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
@@ -6,15 +7,16 @@ from sqlalchemy import select
 
 import forum_media
 from deps import DbSession, FarmerUser, get_owned_farm
-from models import Farm, SensorReading
+from models import Expense, Farm, Harvest, SensorReading
 from schemas import FarmCreate, FarmResponse, FarmUpdate, SensorReadingCreate, SensorReadingResponse
 
 router = APIRouter(prefix="/farms", tags=["farms"])
 
 
 def _profile_values(payload: FarmCreate | FarmUpdate, *, partial: bool) -> dict[str, Any]:
-    """Campos del modelo a partir del esquema validado (las listas anidadas se guardan como JSON plano)."""
-    return payload.model_dump(exclude_unset=partial)
+    """Campos del modelo a partir del esquema validado (las listas anidadas se guardan como JSON plano).
+    Cosechas y costes fijos del alta van a sus propias tablas, no a columnas de la finca."""
+    return payload.model_dump(exclude_unset=partial, exclude={"harvests", "fixed_costs"})
 
 
 @router.get("", response_model=list[FarmResponse])
@@ -31,9 +33,21 @@ def list_farms(
 
 @router.post("", response_model=FarmResponse, status_code=status.HTTP_201_CREATED)
 def create_farm(payload: FarmCreate, db: DbSession, user: FarmerUser) -> Farm:
-    """Crea una granja con su ficha completa (asistente multipaso). `owner_id` es siempre el usuario autenticado."""
+    """Crea una granja con su ficha completa (asistente multipaso). `owner_id` es siempre el usuario autenticado.
+
+    Cosechas y costes fijos iniciales se crean en la MISMA transacción: o se guarda todo, o nada.
+    """
     farm = Farm(**_profile_values(payload, partial=False), owner_id=user.id)
     db.add(farm)
+    harvests = [Harvest(**h.model_dump()) for h in payload.harvests]
+    farm.harvests.extend(harvests)
+    db.flush()  # ids de las cosechas para imputarles los costes
+    today = dt.date.today()
+    for cost in payload.fixed_costs:
+        values = cost.model_dump(exclude={"harvest_index"})
+        values["incurred_on"] = values["incurred_on"] or today
+        harvest = harvests[cost.harvest_index] if cost.harvest_index is not None else None
+        db.add(Expense(**values, farm_id=farm.id, harvest_id=harvest.id if harvest else None, is_fixed=True))
     db.commit()
     db.refresh(farm)
     return farm
@@ -49,9 +63,11 @@ def update_farm(farm_id: int, payload: FarmUpdate, db: DbSession, user: FarmerUs
     """Actualiza la ficha. Solo se modifican los campos enviados; nombre y ubicación no pueden quedar vacíos."""
     farm = get_owned_farm(db, farm_id, user)
     changes = _profile_values(payload, partial=True)
-    for field in ("name", "location"):
+    for field in ("name", "location", "harvest_mode"):
         if field in changes and changes[field] is None:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"'{field}' cannot be null")
+    if changes.get("harvest_mode") == "single" and len(farm.harvests) > 1:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="La finca tiene varias cosechas: elimina las que sobren antes de pasar a cosecha única.")
     for field, value in changes.items():
         setattr(farm, field, value)
     db.commit()

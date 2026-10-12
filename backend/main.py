@@ -49,6 +49,7 @@ _UPLOAD_LIMITS: list[tuple[re.Pattern[str], int]] = [
     (re.compile(r"/api/v1/documents/(?:upload|analyze)"), settings.max_upload_bytes),
     (re.compile(r"/api/v1/forum/upload"), max(settings.forum_image_max_bytes, settings.forum_video_max_bytes)),
     (re.compile(r"/api/v1/farms/\d{1,12}/photo"), settings.forum_image_max_bytes),
+    (re.compile(r"/api/v1/tasks/\d{1,12}/attachments"), max(settings.max_upload_bytes, settings.forum_image_max_bytes)),
 ]
 _MULTIPART_OVERHEAD = 1024 * 1024  # cabeceras multipart y campos del formulario
 

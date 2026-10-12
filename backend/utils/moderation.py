@@ -1,15 +1,18 @@
 """Auto-Mod del foro: detección de lenguaje ofensivo en español y flujo de advertencias y bloqueos.
 
 Flujo (se aplica ANTES de guardar nada en la base de datos):
-- Primera infracción leve (insultos, vulgaridades): HTTP 400, el mensaje no se publica, `warnings_count += 1`
+- 1.ª y 2.ª infracción leve (insultos, vulgaridades): HTTP 400, el mensaje no se publica, `warnings_count += 1`
   y `pending_warning_ack = True`. El frontend muestra un modal obligatorio hasta que el usuario acepta la
   advertencia (`POST /api/v1/users/acknowledge-warning`); mientras tanto no puede publicar.
-- Reincidencia tras haber sido advertido, o infracción grave (odio, amenazas, código malicioso): bloqueo
-  permanente (`is_banned`) y revocación inmediata de todas sus sesiones (HTTP 403).
+- 3.ª infracción (`moderation_ban_after_warnings`), o una grave (odio, amenazas, código malicioso): bloqueo
+  permanente (`is_banned`) y HTTP 403 en cualquier petición posterior.
+- Caducidad: si pasan `moderation_warning_ttl_hours` (72 h) sin nuevas infracciones, las faltas caducan y el
+  contador vuelve a 0 (`expire_warnings`, comprobado en cada petición autenticada).
 
 El diccionario vive en `profanities.json` (ver su `_doc` para la sintaxis de los términos).
 """
 
+import datetime as dt
 import json
 import re
 import unicodedata
@@ -29,7 +32,7 @@ Severity = Literal["mild", "severe"]
 
 WARNING_MESSAGE = (
     "Has recibido una advertencia oficial por incumplimiento de las normas de la comunidad. "
-    "Reincidir supondrá la expulsión permanente de Agropelink."
+    "A la tercera falta la cuenta se suspende de forma permanente; las faltas caducan tras 72 horas sin infracciones."
 )
 PENDING_ACK_DETAIL = "Debes aceptar la advertencia oficial antes de volver a publicar en el foro."
 BANNED_DETAIL = (
@@ -184,6 +187,23 @@ def ban_user(db: Session, user: User, reason: str, *, actor: User | None = None,
     )
 
 
+def expire_warnings(user: User) -> bool:
+    """Pone a cero las faltas si la última tiene más de `moderation_warning_ttl_hours`. No hace commit.
+
+    Devuelve True si ha cambiado algo. Una advertencia caducada tampoco bloquea ya la publicación.
+    """
+    if not user.warnings_count or user.is_banned:
+        return False
+    ttl = dt.timedelta(hours=get_settings().moderation_warning_ttl_hours)
+    if user.last_warning_at is not None and utcnow() - user.last_warning_at < ttl:
+        return False
+    # Sin fecha (faltas anteriores a la caducidad) o caducadas: el contador vuelve a 0.
+    user.warnings_count = 0
+    user.pending_warning_ack = False
+    user.last_warning_at = None
+    return True
+
+
 def require_no_pending_warning(user: User) -> None:
     """Mientras haya una advertencia sin aceptar, el usuario no puede publicar."""
     if user.pending_warning_ack:
@@ -199,14 +219,16 @@ def enforce(db: Session, user: User, *texts: str) -> None:
     from sanitize import clean_text  # el extracto se guarda ya saneado
 
     excerpt = _excerpt(clean_text("\n".join(texts)))
+    expire_warnings(user)  # una falta caducada no cuenta para el bloqueo
     user.warnings_count += 1
+    user.last_warning_at = utcnow()
     reincidence = user.warnings_count >= get_settings().moderation_ban_after_warnings
 
     if verdict.severity == "severe" or reincidence:
         reason = (
             f"Bloqueo automático por infracción grave: {verdict.category}."
             if verdict.severity == "severe"
-            else f"Bloqueo automático por reincidencia tras advertencia oficial: {verdict.category}."
+            else f"Bloqueo automático al acumular {user.warnings_count} faltas: {verdict.category}."
         )
         ban_user(db, user, reason, excerpt=excerpt)
         db.commit()

@@ -10,6 +10,8 @@ import { LoadingBlock } from '../components/ui/Spinner.jsx'
 import { InputsSpendChart, WaterMoistureChart } from '../features/dashboard/AnalyticsCharts.jsx'
 import KpiGrid from '../features/dashboard/KpiGrid.jsx'
 import ReadingQuickForm from '../features/dashboard/ReadingQuickForm.jsx'
+import SensorDashboard from '../features/sensors/SensorDashboard.jsx'
+import AgentBriefing from '../features/dashboard/AgentBriefing.jsx'
 import { demoOverview, fmt } from '../features/dashboard/chartTheme.js'
 import useApi from '../hooks/useApi.js'
 import { ArrowRight, Sprout } from 'lucide-react'
@@ -63,8 +65,20 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <PageHeader eyebrow="Panel de control" title="Analítica de tu explotación" subtitle="Riego, humedad del suelo, insumos y presupuesto de tus fincas, con tus propios datos." />
+      <PageHeader eyebrow="Panel de control" title="Tu explotación" subtitle="Sensores en directo, clima y carburante; después, riego, insumos y presupuesto de tus fincas con tus propios datos." />
 
+      {/* 0. Lo importante de hoy, según el agente (local). */}
+      <AgentBriefing />
+
+      {/* 1. Sensorización en directo (prioritaria): se monta cuando ya se conocen las fincas. */}
+      {farms.loading ? (
+        <div className="mb-12"><LoadingBlock label="Cargando fincas…" /></div>
+      ) : !farms.error && (
+        <SensorDashboard farms={farmList} />
+      )}
+
+      {/* 2. Resumen y analítica histórica */}
+      <h2 className="mb-4 text-xl font-semibold tracking-tight text-white sm:text-2xl">Resumen y analítica</h2>
       {/* Filtros en una sola fila sobre las gráficas */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <label htmlFor="dash-farm" className="sr-only">Finca</label>

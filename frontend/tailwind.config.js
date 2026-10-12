@@ -6,6 +6,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Grises "bosque": sustituyen a `slate` (azul marino casi negro) por grises con un leve tinte verde.
+        // Los tonos más oscuros (900/950) suben de luminosidad: tema oscuro más suave y "agrícola", menos agresivo.
+        // Contraste de texto sobre 950: 400 → 6,9:1 · 500 → 4,4:1 (AA).
+        slate: {
+          50: '#f5f8f6',
+          100: '#e9efeb',
+          200: '#d3ddd7',
+          300: '#b3c2ba',
+          400: '#93a59b',
+          500: '#6f8379',
+          600: '#4f6158',
+          700: '#384842',
+          800: '#27342f',
+          900: '#1b2622',
+          950: '#131c19',
+        },
         // Paleta extraída del logo de Agropelink.
         // primary (verde hoja) — DEFAULT ≈ #5BAD5E
         primary: {
@@ -60,15 +76,15 @@ export default {
       // Capa 1: hairline de luz · 2: contacto · 3: penumbra · 4: sombra ambiental amplia.
       boxShadow: {
         surface:
-          'inset 0 1px 0 0 rgb(255 255 255 / 0.05), 0 0 0 1px rgb(255 255 255 / 0.07), 0 1px 2px 0 rgb(2 6 23 / 0.5), 0 8px 24px -10px rgb(4 30 26 / 0.7), 0 24px 56px -24px rgb(8 45 41 / 0.65)',
+          'inset 0 1px 0 0 rgb(255 255 255 / 0.05), 0 0 0 1px rgb(255 255 255 / 0.07), 0 1px 2px 0 rgb(9 15 13 / 0.5), 0 8px 24px -10px rgb(4 30 26 / 0.7), 0 24px 56px -24px rgb(8 45 41 / 0.65)',
         'surface-hover':
-          'inset 0 1px 0 0 rgb(255 255 255 / 0.07), 0 0 0 1px rgb(127 214 194 / 0.18), 0 2px 4px 0 rgb(2 6 23 / 0.5), 0 14px 32px -10px rgb(4 30 26 / 0.8), 0 32px 72px -28px rgb(31 146 125 / 0.45)',
-        'surface-sm': 'inset 0 1px 0 0 rgb(255 255 255 / 0.04), 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px 0 rgb(2 6 23 / 0.4)',
+          'inset 0 1px 0 0 rgb(255 255 255 / 0.07), 0 0 0 1px rgb(127 214 194 / 0.18), 0 2px 4px 0 rgb(9 15 13 / 0.5), 0 14px 32px -10px rgb(4 30 26 / 0.8), 0 32px 72px -28px rgb(31 146 125 / 0.45)',
+        'surface-sm': 'inset 0 1px 0 0 rgb(255 255 255 / 0.04), 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px 0 rgb(9 15 13 / 0.4)',
         overlay:
-          '0 0 0 1px rgb(255 255 255 / 0.08), 0 2px 4px 0 rgb(2 6 23 / 0.4), 0 16px 40px -8px rgb(2 6 23 / 0.7), 0 40px 96px -24px rgb(4 30 26 / 0.8)',
+          '0 0 0 1px rgb(255 255 255 / 0.08), 0 2px 4px 0 rgb(9 15 13 / 0.4), 0 16px 40px -8px rgb(9 15 13 / 0.7), 0 40px 96px -24px rgb(4 30 26 / 0.8)',
         // Resplandor perimetral de los CTA (reposo / hover).
-        glow: '0 0 0 1px rgb(127 214 194 / 0.35), 0 1px 2px 0 rgb(2 6 23 / 0.4), 0 8px 24px -8px rgb(45 181 154 / 0.45)',
-        'glow-hover': '0 0 0 1px rgb(127 214 194 / 0.6), 0 2px 4px 0 rgb(2 6 23 / 0.4), 0 12px 36px -6px rgb(45 181 154 / 0.65)',
+        glow: '0 0 0 1px rgb(127 214 194 / 0.35), 0 1px 2px 0 rgb(9 15 13 / 0.4), 0 8px 24px -8px rgb(45 181 154 / 0.45)',
+        'glow-hover': '0 0 0 1px rgb(127 214 194 / 0.6), 0 2px 4px 0 rgb(9 15 13 / 0.4), 0 12px 36px -6px rgb(45 181 154 / 0.65)',
         // Foco "elástico" de campos: halo que crece desde el borde.
         'focus-ring': '0 0 0 1px rgb(75 194 168 / 0.7), 0 0 0 4px rgb(75 194 168 / 0.15)',
         'error-ring': '0 0 0 1px rgb(217 164 118 / 0.75), 0 0 0 4px rgb(217 164 118 / 0.14)',
