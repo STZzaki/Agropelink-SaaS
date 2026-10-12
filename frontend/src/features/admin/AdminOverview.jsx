@@ -43,14 +43,14 @@ export default function AdminOverview({ metrics, onNavigate }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Usuarios activos" value={m.active_users} hint={`${nf.format(m.users_total)} cuentas · ${nf.format(m.new_users_30d)} nuevas en 30 días`} onClick={() => onNavigate('usuarios')} />
         <Stat label="Agricultores" value={m.users_by_role.farmer} hint={`${nf.format(m.users_by_role.user)} usuarios estándar · ${nf.format(m.users_by_role.admin)} admin.`} tone="text-primary-300" onClick={() => onNavigate('usuarios')} />
         <Stat label="Fincas registradas" value={m.farms} hint={`${nf.format(m.documents)} documentos archivados`} onClick={() => onNavigate('fincas')} />
         <Stat label="Pendiente de revisar" value={m.pending_applications + m.open_reports + m.open_support_tickets} hint={`${m.pending_applications} altas · ${m.open_reports} denuncias · ${m.open_support_tickets} tickets`} tone="text-accent-300" onClick={() => onNavigate(m.pending_applications ? 'altas' : m.open_reports ? 'moderacion' : 'soporte')} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title="Telemetría de labores">
           <Bars
             rows={[

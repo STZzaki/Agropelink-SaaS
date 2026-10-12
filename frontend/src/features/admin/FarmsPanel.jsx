@@ -25,7 +25,7 @@ export default function FarmsPanel() {
       ) : farms.data.length === 0 ? (
         <p className="py-8 text-center text-sm text-slate-400">No hay fincas que coincidan.</p>
       ) : (
-        <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+        <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-400">
               <tr>

@@ -45,13 +45,13 @@ export default function EconomyPage() {
         </div>
       ) : (
         <>
-          <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             <label htmlFor="eco-farm" className="sr-only">Finca</label>
-            <select id="eco-farm" value={id} onChange={(e) => setFarmId(Number(e.target.value))} className={`${inputClass} !w-auto min-w-[12rem]`}>
+            <select id="eco-farm" value={id} onChange={(e) => setFarmId(Number(e.target.value))} className={`${inputClass} sm:!w-auto sm:min-w-[12rem]`}>
               {farmList.map((f) => <option className={optionClass} key={f.id} value={f.id}>{f.name}</option>)}
             </select>
             <label htmlFor="eco-year" className="sr-only">Año</label>
-            <select id="eco-year" value={year} onChange={(e) => setYear(Number(e.target.value))} className={`${inputClass} !w-auto`}>
+            <select id="eco-year" value={year} onChange={(e) => setYear(Number(e.target.value))} className={`${inputClass} sm:!w-auto`}>
               {YEARS.map((y) => <option className={optionClass} key={y} value={y}>{y}</option>)}
             </select>
           </div>
@@ -68,11 +68,11 @@ export default function EconomyPage() {
                   <span>{fin.undated_invoices} {fin.undated_invoices === 1 ? 'factura' : 'facturas'} de {fin.year} sin fecha de devengo no se incluyen en el desglose. Complétala en <Link to="/documents" className="font-semibold underline underline-offset-2">Documentos</Link>.</span>
                 </p>
               )}
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <QuarterChart data={fin.by_quarter} year={fin.year} />
                 <YearChart data={fin.by_year} year={fin.year} />
               </div>
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                 <CategoryBreakdown items={fin.by_category} />
                 <HarvestCostTable items={fin.by_harvest} />
               </div>

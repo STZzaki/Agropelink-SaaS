@@ -80,14 +80,16 @@ export default function TaskCalendar({ month, onMonthChange, tasks, selectedDay,
   const { start, weeks } = monthRange(month)
   const today = toISO(new Date())
   const rows = useMemo(() => Array.from({ length: weeks }, (_, w) => ({ start: addDays(start, w * 7), ...layoutWeek(tasks, addDays(start, w * 7)) })), [tasks, start.getTime(), weeks]) // eslint-disable-line react-hooks/exhaustive-deps
-  const title = month.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+  // «octubre de 2026» → «Octubre de 2026» (CSS `capitalize` pondría también «De» en mayúscula).
+  const rawTitle = month.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+  const title = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1)
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => onMonthChange(new Date(month.getFullYear(), month.getMonth() - 1, 1))} aria-label="Mes anterior" className="rounded-lg p-2 text-slate-300 hover:bg-white/5 hover:text-white"><ChevronLeft className="h-4 w-4" aria-hidden="true" /></button>
-          <h3 className="min-w-[10rem] text-center text-base font-semibold capitalize text-white" aria-live="polite">{title}</h3>
+          <h3 className="min-w-[9rem] text-center text-base font-semibold text-white sm:min-w-[10rem]" aria-live="polite">{title}</h3>
           <button type="button" onClick={() => onMonthChange(new Date(month.getFullYear(), month.getMonth() + 1, 1))} aria-label="Mes siguiente" className="rounded-lg p-2 text-slate-300 hover:bg-white/5 hover:text-white"><ChevronRight className="h-4 w-4" aria-hidden="true" /></button>
           <button type="button" onClick={() => { const n = new Date(); onMonthChange(new Date(n.getFullYear(), n.getMonth(), 1)); onSelectDay(toISO(n)) }} className="ml-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-300 ring-1 ring-inset ring-white/10 hover:bg-white/5">Hoy</button>
         </div>

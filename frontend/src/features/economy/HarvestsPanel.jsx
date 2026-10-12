@@ -93,7 +93,7 @@ export default function HarvestsPanel({ farm, harvests, onChanged }) {
       {harvests.length === 0 && editing !== 'new' ? (
         <p className="text-sm text-slate-400">Aún no hay cosechas definidas para esta finca.</p>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {harvests.map((h) =>
             editing === h.id ? (
               <li key={h.id} className="lg:col-span-2"><HarvestEditor farmId={farm.id} harvest={h} onDone={done} onCancel={() => setEditing(null)} /></li>

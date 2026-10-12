@@ -176,7 +176,7 @@ export default function DocumentManager({ farms, notesKey = 0, onNotesChanged })
     <div className="space-y-6">
       <Card title="Subir documentos">
         <p className="-mt-2 mb-4 text-sm text-slate-400">Indica primero a qué granja, cosecha, año y tipo pertenecen: se archivarán en su carpeta con un código de serie único.</p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FormField id="dm-farm_id" label="Granja *" error={show('farm_id')}>
             <FarmSelect id="dm-farm_id" farms={farms} value={meta.farm_id} onChange={(v) => setMeta((m) => ({ ...m, farm_id: v }))} invalid={!!show('farm_id')} />
           </FormField>
@@ -196,7 +196,7 @@ export default function DocumentManager({ farms, notesKey = 0, onNotesChanged })
         </div>
         <details className="mt-4 rounded-xl bg-white/[0.02] px-4 py-2 ring-1 ring-inset ring-white/[0.06]">
           <summary className="cursor-pointer py-1 text-sm font-medium text-slate-300">Más datos (opcional): estado, fecha de devengo e importe</summary>
-          <div className="grid gap-4 py-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 py-3 sm:grid-cols-3">
             <FormField id="dm-status" label="Estado">
               <select id="dm-status" value={meta.status} onChange={setField('status')} className={inputClass}>
                 {DOC_STATUSES.map((s) => <option className={optionClass} key={s.id} value={s.id}>{s.label}</option>)}
@@ -217,7 +217,7 @@ export default function DocumentManager({ farms, notesKey = 0, onNotesChanged })
         {uploads.length > 0 && <ul className="mt-4 divide-y divide-white/[0.06]">{uploads.map((u) => <UploadItem key={u.id} upload={u} />)}</ul>}
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
         <Card title="Carpetas" className="lg:self-start">
           {folders.loading && !folders.data ? <LoadingBlock /> : folders.error ? <Alert variant="error" onRetry={folders.reload}>{folders.error}</Alert> : (
             <FolderTree tree={tree} total={total} selection={selection} onSelect={(s) => { setSelection(s); setPage(0) }} />
@@ -227,10 +227,10 @@ export default function DocumentManager({ farms, notesKey = 0, onNotesChanged })
         <Card
           title={selection.campaign ?? (selection.year ? `Año ${selection.year}` : selection.farm_id ? tree.find((f) => f.id === selection.farm_id)?.name : 'Todo el archivo')}
           actions={
-            <div className="flex items-center gap-3">
+            <div className="flex w-full items-center gap-3 sm:w-auto">
               {docs.loading && docs.data && <Spinner size="sm" />}
               <label htmlFor="dm-q" className="sr-only">Buscar por código, nombre o proveedor</label>
-              <input id="dm-q" type="search" maxLength={60} value={q} onChange={(e) => { setQ(e.target.value); setPage(0) }} className={`${inputClass} !w-56`} placeholder="AGRO-2026-FCT-0042…" />
+              <input id="dm-q" type="search" maxLength={60} value={q} onChange={(e) => { setQ(e.target.value); setPage(0) }} className={`${inputClass} sm:!w-56`} placeholder="AGRO-2026-FCT-0042…" />
             </div>
           }
         >

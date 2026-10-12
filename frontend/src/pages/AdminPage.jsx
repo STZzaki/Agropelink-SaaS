@@ -31,7 +31,7 @@ export default function AdminPage() {
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader title="Administración" subtitle="Visión global de la plataforma, altas de agricultores, moderación del foro y soporte." />
 
-      <div role="tablist" aria-label="Secciones de administración" className="-mx-4 mb-8 flex gap-1 overflow-x-auto border-b border-white/10 px-4 sm:mx-0 sm:px-0">
+      <div role="tablist" aria-label="Secciones de administración" className="relative -mx-4 mb-8 flex gap-1 overflow-x-auto border-b border-white/10 px-4 sm:mx-0 sm:px-0">
         {TABS.map((t) => {
           const count = t.badge ? metrics.data?.[t.badge] : 0
           const active = tab === t.id

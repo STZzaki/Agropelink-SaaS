@@ -66,7 +66,7 @@ export default function FarmerApplicationForm({ onSubmitted }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="grid gap-4 sm:grid-cols-2">
+    <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <FormField id="fa-farm_name" label="Nombre de la explotación" error={errors.farm_name}>
         <input id="fa-farm_name" maxLength={150} value={values.farm_name} onChange={set('farm_name')} className={inputClass} placeholder="Finca Los Llanos" {...aria('farm_name')} />
       </FormField>

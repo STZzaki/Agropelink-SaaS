@@ -33,7 +33,7 @@ export default function Footer() {
             Financiación y apoyo
           </h2>
 
-          <ul className="grid gap-6 md:grid-cols-2 md:gap-10">
+          <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-10">
             {INSTITUTIONAL.map((item) => (
               <li
                 key={item.src}

@@ -172,9 +172,27 @@ export const contactApi = {
   send: (payload) => api.post('/contact', payload).then((r) => r.data),
 }
 
+/**
+ * Solo un perfil de verdad cuenta como sesión. Si `/api` no llega al backend (proxy mal configurado, backend
+ * caído, «fallback» de la SPA) el servidor puede responder 200 con el index.html: tratarlo como usuario dejaba
+ * la app «autenticada» con un texto y la rompía (`user.name` undefined). Así se trata como invitado.
+ */
+export class InvalidProfileError extends Error {
+  constructor() {
+    super('El servidor no ha devuelto un perfil válido. Inténtalo de nuevo en unos minutos.')
+    this.name = 'InvalidProfileError'
+  }
+}
+
+export function asUser(data) {
+  const valid = data && typeof data === 'object' && Number.isInteger(data.id) && typeof data.name === 'string' && typeof data.role === 'string'
+  if (!valid) throw new InvalidProfileError()
+  return data
+}
+
 export const authApi = {
-  me: (config) => api.get('/auth/me', config).then((r) => r.data),
-  login: (payload) => api.post('/auth/login', payload).then((r) => r.data),
+  me: (config) => api.get('/auth/me', config).then((r) => asUser(r.data)),
+  login: (payload) => api.post('/auth/login', payload).then((r) => asUser(r.data)),
   register: (payload) => api.post('/auth/register', payload).then((r) => r.data),
   logout: () => api.post('/auth/logout'),
   moderation: (config) => api.get('/auth/me/moderation', config).then((r) => r.data),

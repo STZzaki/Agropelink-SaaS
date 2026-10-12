@@ -18,7 +18,7 @@ export default function DocumentMetaFields({ idPrefix, values, onChange, errors 
   const aria = (name) => ({ 'aria-invalid': errors[name] ? true : undefined, 'aria-describedby': errors[name] ? `${idPrefix}-${name}-error` : undefined })
 
   return (
-    <div className={`grid gap-3 ${compact ? 'grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3'}`}>
+    <div className={`grid gap-3 ${compact ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}>
       {field(
         'farm_id',
         'Finca / parcela',

@@ -27,7 +27,7 @@ function Delta({ current, previous }) {
 export default function KpiGrid({ kpis }) {
   const budgetPct = kpis.budget_total > 0 ? Math.min(100, (kpis.budget_spent / kpis.budget_total) * 100) : null
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Kpi label="Superficie gestionada" value={`${fmt(kpis.surface_ha)} ha`} hint={`${kpis.farms} ${kpis.farms === 1 ? 'finca' : 'fincas'} · ${kpis.pending_tasks} tareas pendientes`} />
       <Kpi label="Agua · últimos 30 días" value={fmtLiters(kpis.water_liters_30d)} hint={kpis.avg_moisture_7d !== null ? `Humedad media 7 días: ${fmt(kpis.avg_moisture_7d)} %` : 'Sin lecturas de humedad esta semana'} />
       <Kpi label={`Insumos ${new Date().getFullYear()} (acumulado)`} value={fmtEuro(kpis.inputs_spend_ytd)} hint={<Delta current={kpis.inputs_spend_ytd} previous={kpis.inputs_spend_prev_ytd} />} />

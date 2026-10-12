@@ -62,7 +62,7 @@ export default function HarvestFields({ idPrefix, value, onChange, errors = {} }
   )
   const days = durationDays(value.start_date, value.end_date)
   return (
-    <div className="grid gap-3 sm:grid-cols-6">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-6">
       <Field id={`${idPrefix}-name`} label="Cosecha / cultivo *" error={errors.name} className="sm:col-span-3">{input('name', { maxLength: 80, placeholder: 'Tomate rama · ciclo otoño' })}</Field>
       <Field id={`${idPrefix}-plant_count`} label="Nº de plantas" error={errors.plant_count} className="sm:col-span-3">{input('plant_count', { inputMode: 'numeric', placeholder: '40000' })}</Field>
       <Field id={`${idPrefix}-surface_ha`} label="Superficie (ha)" error={errors.surface_ha} className="sm:col-span-2">{input('surface_ha', { inputMode: 'decimal', placeholder: '2,5' })}</Field>

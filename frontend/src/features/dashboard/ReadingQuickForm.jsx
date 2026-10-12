@@ -45,7 +45,7 @@ export default function ReadingQuickForm({ farms, onSaved }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+    <form onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
       <FormField id="rd-farm" label="Finca">
         <FarmSelect id="rd-farm" farms={farms} value={values.farm_id} onChange={(v) => setValues((s) => ({ ...s, farm_id: v }))} />
       </FormField>

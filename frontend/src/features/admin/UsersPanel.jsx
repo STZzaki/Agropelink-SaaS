@@ -116,7 +116,7 @@ export default function UsersPanel({ onChanged }) {
       }
     >
       <CreateUserDialog open={creating} onClose={() => setCreating(false)} onCreated={() => { users.reload(); onChanged() }} />
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <input type="search" aria-label="Buscar por nombre o email" value={search} onChange={(e) => setSearch(e.target.value)} maxLength={80} className={inputClass} placeholder="Buscar nombre o email…" />
         <select aria-label="Filtrar por rol" value={role} onChange={(e) => setRole(e.target.value)} className={inputClass}>
           <option className={optionClass} value="">Todos los roles</option>
@@ -135,7 +135,7 @@ export default function UsersPanel({ onChanged }) {
       ) : users.data.items.length === 0 ? (
         <p className="py-8 text-center text-sm text-slate-400">Ningún usuario coincide.</p>
       ) : (
-        <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
+        <div className="relative -mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
           <table className="w-full min-w-[60rem] text-left text-sm">
             <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-400">
               <tr>

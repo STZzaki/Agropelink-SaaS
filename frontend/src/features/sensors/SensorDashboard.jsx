@@ -99,7 +99,7 @@ export default function SensorDashboard({ farms }) {
 
   return (
     <section aria-labelledby="sensors-title" className="mb-12">
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-5 flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-secondary-300">Sensorización</p>
           <h2 id="sensors-title" className="mt-1 text-xl font-semibold tracking-tight text-white sm:text-2xl">Tu finca en directo</h2>
@@ -107,7 +107,7 @@ export default function SensorDashboard({ farms }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor="sensor-farm" className="sr-only">Granja</label>
-          <select id="sensor-farm" value={farmId ?? ''} onChange={(e) => changeFarm(e.target.value)} className={`${inputClass} !w-auto min-w-[12rem]`}>
+          <select id="sensor-farm" value={farmId ?? ''} onChange={(e) => changeFarm(e.target.value)} className={`${inputClass} sm:!w-auto sm:min-w-[12rem]`}>
             {farms.map((f) => <option className={optionClass} key={f.id} value={f.id}>{f.name}</option>)}
           </select>
           <div role="group" aria-label="Periodo de las gráficas" className="flex gap-1 rounded-xl bg-white/[0.04] p-1 ring-1 ring-inset ring-white/10">
@@ -133,10 +133,10 @@ export default function SensorDashboard({ farms }) {
       )}
       {error && !live && <div className="mb-5"><Alert variant="error" onRetry={refresh}>{error}</Alert></div>}
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           {loading && !live ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Cargando sensores">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Cargando sensores">
               {[0, 1, 2].map((i) => <div key={i} className="skeleton h-40 rounded-2xl" />)}
             </div>
           ) : !hasRealSensors && !demo ? (
@@ -151,12 +151,12 @@ export default function SensorDashboard({ farms }) {
           ) : (
             <>
               {demo && (
-                <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
                   <p role="status" className="text-xs font-semibold uppercase tracking-wide text-accent-300">Vista previa con datos de ejemplo · no corresponden a tu finca</p>
                   <button type="button" onClick={() => setDemo(false)} className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/5">Ocultar ejemplo</button>
                 </div>
               )}
-              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Sensores de la finca">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Sensores de la finca">
                 {sensors.map((s) => (
                   <li key={s.id}>
                     <SensorCard sensor={s} points={pointsById.get(s.id) ?? []} selected={selected?.id === s.id} onSelect={() => setSelectedId(s.id)} now={now} />
@@ -179,7 +179,7 @@ export default function SensorDashboard({ farms }) {
         </div>
 
         {/* Contexto exterior en la misma vista: clima de la provincia de la finca y gasóleo agrícola. */}
-        <aside aria-label="Clima y carburante" className="grid gap-6 md:grid-cols-2 xl:grid-cols-1 xl:content-start">
+        <aside aria-label="Clima y carburante" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-1 xl:content-start">
           <WeatherWidget key={farmId} defaultPlace={placeFromText(farm?.location)} />
           <FuelWidget />
         </aside>

@@ -58,8 +58,8 @@ function ManualReading({ farmId, sensor, onSaved }) {
   return (
     <form onSubmit={submit} noValidate className="flex flex-wrap items-start gap-2">
       <label htmlFor={id} className="sr-only">Lectura manual en {sensor.unit}</label>
-      <div className="relative">
-        <input id={id} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Lectura manual" aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-err` : undefined} className={`${inputClass} !w-40 pr-14`} />
+      <div className="relative flex-1 sm:flex-none">
+        <input id={id} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Lectura manual" aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-err` : undefined} className={`${inputClass} pr-14 sm:!w-40`} />
         <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-500">{sensor.unit}</span>
       </div>
       <Button type="submit" variant="secondary" loading={busy}>Registrar</Button>
@@ -129,7 +129,7 @@ export default function SensorDetail({ farmId, sensor, points, hours, demo, onCh
             Sin lecturas en este periodo. Conecta la pasarela del sensor o registra una lectura manual.
           </div>
         ) : table ? (
-          <div className="max-h-60 overflow-auto" data-lenis-prevent>
+          <div className="relative max-h-60 overflow-auto" data-lenis-prevent>
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-wide text-slate-400">
                 <tr><th className="py-2 font-semibold">Momento</th><th className="py-2 text-right font-semibold">Valor ({sensor.unit})</th></tr>
@@ -164,7 +164,7 @@ export default function SensorDetail({ farmId, sensor, points, hours, demo, onCh
       </div>
 
       {!demo && (
-        <div className="mt-5 flex flex-wrap items-start justify-between gap-3 border-t border-white/[0.06] pt-4">
+        <div className="mt-5 flex flex-col gap-3 border-t md:flex-row md:flex-wrap md:items-start md:justify-between border-white/[0.06] pt-4">
           <ManualReading farmId={farmId} sensor={sensor} onSaved={() => onChanged({})} />
           {confirm ? (
             <div className="flex items-center gap-2 text-xs text-slate-300">

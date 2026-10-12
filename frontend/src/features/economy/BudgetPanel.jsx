@@ -21,7 +21,7 @@ export default function BudgetPanel({ budget, year }) {
 
   return (
     <section aria-labelledby="budget-title" className="card-glass p-5 sm:p-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h2 id="budget-title" className="text-sm font-medium text-slate-400">Presupuesto consumido · {year}</h2>
           <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-white">
@@ -30,7 +30,7 @@ export default function BudgetPanel({ budget, year }) {
           </p>
         </div>
         {total !== null ? (
-          <div className="text-right">
+          <div className="md:text-right">
             <p className={`text-2xl font-semibold tabular-nums ${over ? 'text-accent-200' : 'text-white'}`}>{(pct ?? 0).toLocaleString('es-ES', { maximumFractionDigits: 1 })} %</p>
             <p className={`text-sm tabular-nums ${over ? 'text-accent-200' : 'text-slate-400'}`}>{over ? `Excedido en ${money(-remaining)}` : `Quedan ${money(remaining)}`}</p>
           </div>
@@ -50,7 +50,7 @@ export default function BudgetPanel({ budget, year }) {
         </p>
       )}
 
-      <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {visible.map((s) => (
           <div key={s.key} className="rounded-xl bg-white/[0.03] px-4 py-3">
             <dt className="flex items-center gap-2 text-xs font-medium text-slate-400">

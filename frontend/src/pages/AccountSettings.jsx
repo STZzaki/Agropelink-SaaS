@@ -61,7 +61,7 @@ export default function AccountSettings() {
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <PageHeader eyebrow="Mi cuenta" title="Ajustes de la cuenta" subtitle="Gestiona tu perfil público en Agropelink y la seguridad de tu acceso." />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <form onSubmit={handleSubmit} noValidate>
           <Card title="Perfil">
             <div className="mb-6 flex items-center gap-4">
@@ -75,7 +75,7 @@ export default function AccountSettings() {
 
             <AvatarSelector value={values.avatar} name={values.name} onChange={(avatar) => { setValues((v) => ({ ...v, avatar })); setState('idle') }} />
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField id="acc-name" label="Nombre" error={errors.name}>
                 <input id="acc-name" autoComplete="name" maxLength={100} value={values.name} onChange={set('name')} className={inputClass} {...aria('name')} />
               </FormField>

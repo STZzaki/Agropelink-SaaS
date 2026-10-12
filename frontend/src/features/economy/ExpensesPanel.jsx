@@ -49,7 +49,7 @@ function ExpenseForm({ farmId, harvests, onCreated }) {
 
   const aria = (k) => ({ 'aria-invalid': errors[k] ? true : undefined, 'aria-describedby': errors[k] ? `exp-${k}-error` : undefined })
   return (
-    <form onSubmit={submit} noValidate className="grid gap-3 sm:grid-cols-6">
+    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3 sm:grid-cols-6">
       <FormField id="exp-category" label="Categoría" className="sm:col-span-2">
         <select id="exp-category" value={values.category} onChange={set('category')} className={inputClass}>
           {EXPENSE_CATEGORIES.map((c) => <option className={optionClass} key={c.id} value={c.id}>{c.label}</option>)}
@@ -114,7 +114,7 @@ export default function ExpensesPanel({ farmId, year, harvests, onChanged }) {
         ) : items.length === 0 ? (
           <p className="text-sm text-slate-400">No hay costes registrados en {year}.</p>
         ) : (
-          <div className="max-h-[28rem] overflow-auto" data-lenis-prevent>
+          <div className="relative max-h-[28rem] overflow-auto" data-lenis-prevent>
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-wide text-slate-400">
                 <tr><th className="py-2 font-semibold">Fecha</th><th className="py-2 font-semibold">Concepto</th><th className="hidden py-2 font-semibold md:table-cell">Categoría</th><th className="py-2 text-right font-semibold">Importe</th><th className="py-2"><span className="sr-only">Acciones</span></th></tr>

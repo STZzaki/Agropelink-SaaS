@@ -88,7 +88,7 @@ export default function TasksPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <PageHeader title="Tareas" subtitle="Planifica las labores, asígnalas a tu equipo y lleva el cuaderno de campo al día." />
         <SiexGenerator farms={farmList} />
       </div>
@@ -105,7 +105,7 @@ export default function TasksPage() {
       </div>
 
       {tab === 'calendar' && (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <Card>
               {monthTasks.error ? (
@@ -127,7 +127,7 @@ export default function TasksPage() {
       )}
 
       {tab === 'list' && (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card title="Listado" className="lg:col-span-2">
             <TaskFilters status={status} onStatusChange={setStatus} farmId={farmId} onFarmChange={setFarmId} farms={farmList} />
             <div className="mt-4">

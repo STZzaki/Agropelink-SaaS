@@ -61,7 +61,7 @@ function WorkerForm({ worker, onSaved, onCancel }) {
 
   const aria = (k) => ({ 'aria-invalid': errors[k] ? true : undefined, 'aria-describedby': errors[k] ? `wk-${k}-error` : undefined })
   return (
-    <form onSubmit={submit} noValidate className="grid gap-4 rounded-2xl bg-white/[0.02] p-4 ring-1 ring-inset ring-secondary-400/20 sm:grid-cols-4">
+    <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-4 rounded-2xl bg-white/[0.02] p-4 ring-1 ring-inset ring-secondary-400/20 sm:grid-cols-4">
       <FormField id="wk-name" label="Nombre" error={errors.name} className="sm:col-span-2">
         <input id="wk-name" value={v.name} onChange={set('name')} maxLength={100} className={inputClass} {...aria('name')} />
       </FormField>
@@ -151,7 +151,7 @@ export default function WorkersPanel({ workers, loading, error, onReload }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col items-start gap-3 md:flex-row md:items-center md:justify-between">
         <p className="max-w-2xl text-sm text-slate-400">
           Cada trabajador puede ver en su portal las tareas que le asignes: genera un código y que lo introduzca en su cuenta de Agropelink. Nunca verá costes ni sueldos.
         </p>
@@ -163,7 +163,7 @@ export default function WorkersPanel({ workers, loading, error, onReload }) {
       {list.length === 0 && editing !== 'new' ? (
         <p className="rounded-xl border border-dashed border-white/15 px-6 py-8 text-center text-sm text-slate-400">Aún no has dado de alta a tu equipo.</p>
       ) : (
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {list.map((w) =>
             editing === w.id ? (
               <li key={w.id} className="lg:col-span-2"><WorkerForm worker={w} onSaved={() => { setEditing(null); onReload() }} onCancel={() => setEditing(null)} /></li>
@@ -193,7 +193,7 @@ export default function WorkersPanel({ workers, loading, error, onReload }) {
                 </dl>
                 <div className="mt-3 border-t border-white/[0.06] pt-3 text-xs">
                   {w.linked ? (
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="inline-flex items-center gap-1.5 text-primary-200"><UserCheck className="h-4 w-4" aria-hidden="true" /> Vinculado con la cuenta de {w.linked_account_name}</span>
                       <button type="button" onClick={() => run(() => workersApi.unlink(w.id))} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-slate-400 hover:bg-white/5 hover:text-white"><Link2Off className="h-3.5 w-3.5" aria-hidden="true" /> Desvincular</button>
                     </div>
@@ -207,7 +207,7 @@ export default function WorkersPanel({ workers, loading, error, onReload }) {
                       <p className="mt-2 text-slate-400">El trabajador lo introduce en «Mi portal → Mis tareas asignadas».</p>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-slate-500">{w.invite_pending ? 'Código generado, pendiente de canjear' : 'Sin cuenta vinculada'}</span>
                       {w.active && <button type="button" onClick={() => makeInvite(w)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 font-semibold text-secondary-200 hover:bg-white/5"><KeyRound className="h-3.5 w-3.5" aria-hidden="true" /> {w.invite_pending ? 'Nuevo código' : 'Generar código'}</button>}
                     </div>

@@ -34,9 +34,9 @@ function Row({ doc, farmName, onChanged, onError }) {
 
   return (
     <Fragment>
-    <tr className="align-top">
-      <td className="whitespace-nowrap py-3 pr-4 font-mono text-xs font-semibold text-white">{doc.reference}</td>
-      <td className="max-w-[14rem] py-3 pr-4">
+    <tr className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl bg-white/[0.03] p-3 ring-1 ring-inset ring-white/[0.06] md:table-row md:rounded-none md:bg-transparent md:p-0 md:align-top md:ring-0">
+      <td className="col-span-2 whitespace-nowrap font-mono text-xs font-semibold text-white md:py-3 md:pr-4">{doc.reference}</td>
+      <td className="col-span-2 min-w-0 md:max-w-[14rem] md:py-3 md:pr-4">
         <p className="truncate font-medium text-slate-100" title={doc.filename}>{doc.filename}</p>
         <p className="text-xs text-slate-400">{docTypeLabel(doc.doc_type)}{doc.vendor ? ` · ${doc.vendor}` : ''}</p>
         <button
@@ -58,13 +58,13 @@ function Row({ doc, farmName, onChanged, onError }) {
           )}
         </button>
       </td>
-      <td className="py-3 pr-4 text-slate-300">
+      <td className="col-span-2 text-slate-300 md:py-3 md:pr-4">
         <p>{doc.campaign ?? '—'}</p>
         <p className="text-xs text-slate-400">{farmName ?? '—'} · {doc.fiscal_year ?? '—'}</p>
       </td>
-      <td className="whitespace-nowrap py-3 pr-4 text-slate-300">{formatDay(doc.accrual_date)}</td>
-      <td className="whitespace-nowrap py-3 pr-4 text-right tabular-nums text-slate-100">{formatAmount(doc.amount)}</td>
-      <td className="py-3 pr-4">
+      <td className="whitespace-nowrap text-slate-300 md:py-3 md:pr-4"><span className="block text-[11px] text-slate-500 md:hidden">Devengo</span>{formatDay(doc.accrual_date)}</td>
+      <td className="whitespace-nowrap text-right tabular-nums text-slate-100 md:py-3 md:pr-4"><span className="block text-[11px] text-slate-500 md:hidden">Importe</span>{formatAmount(doc.amount)}</td>
+      <td className="self-center md:py-3 md:pr-4">
         <label className="sr-only" htmlFor={`st-${doc.id}`}>Estado de {doc.reference}</label>
         <select
           id={`st-${doc.id}`}
@@ -76,7 +76,7 @@ function Row({ doc, farmName, onChanged, onError }) {
           {DOC_STATUSES.map((s) => <option className={optionClass} key={s.id} value={s.id}>{s.label}</option>)}
         </select>
       </td>
-      <td className="whitespace-nowrap py-3 text-right">
+      <td className="whitespace-nowrap text-right md:py-3">
         {confirmDelete ? (
           <span className="inline-flex items-center gap-2 text-xs">
             <span className="text-slate-300">¿Eliminar?</span>
@@ -102,8 +102,8 @@ function Row({ doc, farmName, onChanged, onError }) {
       </td>
     </tr>
     {notesOpen && (
-      <tr id={`notes-${doc.id}`}>
-        <td colSpan={COLUMNS} className="pb-4 pt-0">
+      <tr id={`notes-${doc.id}`} className="block md:table-row">
+        <td colSpan={COLUMNS} className="block pb-4 pt-2 md:table-cell md:pt-0">
           <DocumentNotes document={doc} onChanged={onChanged} />
         </td>
       </tr>
@@ -127,9 +127,9 @@ export default function DocumentTable({ documents, farms, filtered, onChanged })
   return (
     <>
       {error && <p role="alert" className="mb-3 text-sm font-medium text-accent-300">{error}</p>}
-      <div className="-mx-5 overflow-x-auto px-5 sm:-mx-6 sm:px-6">
-        <table className="w-full min-w-[56rem] text-left text-sm">
-          <thead className="border-b border-white/10 text-xs uppercase tracking-wide text-slate-400">
+      <div className="relative md:-mx-6 md:overflow-x-auto md:px-6">
+        <table className="block w-full text-left text-sm md:table md:min-w-[56rem]">
+          <thead className="hidden border-b border-white/10 text-xs uppercase tracking-wide text-slate-400 md:table-header-group">
             <tr>
               <th scope="col" className="py-2 pr-4 font-semibold">Código</th>
               <th scope="col" className="py-2 pr-4 font-semibold">Documento</th>
@@ -140,7 +140,7 @@ export default function DocumentTable({ documents, farms, filtered, onChanged })
               <th scope="col" className="py-2 text-right font-semibold"><span className="sr-only">Acciones</span></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.06]">
+          <tbody className="block space-y-3 md:table-row-group md:space-y-0 md:divide-y md:divide-white/[0.06]">
             {documents.map((doc) => (
               <Row key={doc.id} doc={doc} farmName={farmName(doc.farm_id)} onChanged={onChanged} onError={setError} />
             ))}

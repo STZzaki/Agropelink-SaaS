@@ -75,7 +75,7 @@ export default function TaskDetail({ task, farmName, worker, onClose, onChanged,
             <button type="button" onClick={() => dialogRef.current?.close()} aria-label="Cerrar" className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button>
           </div>
 
-          <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+          <dl className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             <div className="flex items-center gap-2 text-slate-300"><CalendarDays className="h-4 w-4 text-slate-500" aria-hidden="true" /><dt className="sr-only">Periodo</dt><dd>{formatSpan(task)}</dd></div>
             {farmName && <div className="flex items-center gap-2 text-slate-300"><MapPin className="h-4 w-4 text-slate-500" aria-hidden="true" /><dt className="sr-only">Granja</dt><dd>{farmName}</dd></div>}
             <div className="flex items-center gap-2 text-slate-300"><User className="h-4 w-4 text-slate-500" aria-hidden="true" /><dt className="sr-only">Asignada a</dt><dd>{worker ? `${worker.name} · ${positionLabel(worker.position)}` : 'Sin asignar'}</dd></div>

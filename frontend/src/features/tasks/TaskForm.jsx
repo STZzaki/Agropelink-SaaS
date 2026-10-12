@@ -118,7 +118,7 @@ export default function TaskForm({ farms, workers = [], defaultDate, onCreated }
         <input id="task-title" className={inputClass} value={values.title} maxLength={200} onChange={set('title')} placeholder="Ej. Tratamiento contra oídio" {...aria('title')} />
       </FormField>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField id="task-category" label="Tipo de labor">
           <select id="task-category" value={values.category} onChange={set('category')} className={inputClass}>
             {TASK_CATEGORIES.map((c) => <option className={optionClass} key={c.id} value={c.id}>{c.label}</option>)}
@@ -129,7 +129,7 @@ export default function TaskForm({ farms, workers = [], defaultDate, onCreated }
         </FormField>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField id="task-date" label={values.multiday ? 'Inicio' : 'Fecha'} error={errors.date}>
           <input id="task-date" type="date" className={inputClass} value={values.date} onChange={set('date')} {...aria('date')} />
         </FormField>

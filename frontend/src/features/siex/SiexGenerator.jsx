@@ -33,7 +33,7 @@ function Section({ title, children }) {
 function Table({ head, rows, empty }) {
   if (!rows.length) return <p className="text-sm text-slate-500">{empty}</p>
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead className="text-xs text-slate-500"><tr>{head.map((h) => <th key={h} className="py-1.5 pr-3 font-semibold">{h}</th>)}</tr></thead>
         <tbody className="divide-y divide-white/[0.06]">{rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j} className="py-1.5 pr-3 text-slate-200">{c}</td>)}</tr>)}</tbody>
@@ -195,16 +195,16 @@ export default function SiexGenerator({ farms }) {
             <button type="button" onClick={() => dialogRef.current?.close()} aria-label="Cerrar" className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-end gap-3">
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <div>
               <label htmlFor="siex-farm" className="mb-1 block text-xs text-slate-400">Granja</label>
-              <select id="siex-farm" value={farmId} onChange={(e) => setFarmId(e.target.value)} disabled={phase === 'running'} className={`${inputClass} !w-auto min-w-[12rem]`}>
+              <select id="siex-farm" value={farmId} onChange={(e) => setFarmId(e.target.value)} disabled={phase === 'running'} className={`${inputClass} sm:!w-auto sm:min-w-[12rem]`}>
                 {farms.map((f) => <option className={optionClass} key={f.id} value={f.id}>{f.name}</option>)}
               </select>
             </div>
             <div>
               <label htmlFor="siex-year" className="mb-1 block text-xs text-slate-400">Campaña</label>
-              <select id="siex-year" value={year} onChange={(e) => setYear(Number(e.target.value))} disabled={phase === 'running'} className={`${inputClass} !w-auto`}>
+              <select id="siex-year" value={year} onChange={(e) => setYear(Number(e.target.value))} disabled={phase === 'running'} className={`${inputClass} sm:!w-auto`}>
                 {[0, 1, 2].map((i) => <option className={optionClass} key={i} value={THIS_YEAR - i}>{THIS_YEAR - i}</option>)}
               </select>
             </div>

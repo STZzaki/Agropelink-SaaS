@@ -45,7 +45,7 @@ export function WaterMoistureChart({ data, demo, emptyHint }) {
       {data.length === 0 ? (
         <EmptyChart>{emptyHint}</EmptyChart>
       ) : table ? (
-        <div className="max-h-72 overflow-auto" data-lenis-prevent>
+        <div className="relative max-h-72 overflow-auto" data-lenis-prevent>
           <table className="w-full text-left text-sm">
             <thead className="sticky top-0 bg-slate-900 text-xs uppercase tracking-wide text-slate-400">
               <tr><th className="py-2 font-semibold">Fecha</th><th className="py-2 text-right font-semibold">Agua</th><th className="py-2 text-right font-semibold">Humedad</th></tr>

@@ -54,7 +54,7 @@ export default function PortalPage() {
       <PageHeader title={`Hola, ${user.name.split(' ')[0]}`} subtitle="Tu portal Agropelink: meteorología, carburante y la comunidad de agricultores." />
 
       {/* Los widgets públicos usan el estilo oscuro de la landing. */}
-      <section aria-label="Datos en directo" className="grid gap-6 rounded-3xl bg-slate-950 p-4 text-slate-200 sm:p-6 lg:grid-cols-2">
+      <section aria-label="Datos en directo" className="grid grid-cols-1 gap-6 rounded-3xl bg-slate-950 p-4 text-slate-200 sm:p-6 lg:grid-cols-2">
         <WeatherWidget />
         <FuelWidget />
       </section>
@@ -63,9 +63,9 @@ export default function PortalPage() {
         <AssignedTasks />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-5">
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
         <Card title="Conviértete en Agricultor Agropelink" className="lg:col-span-3">
-          <ul className="mb-6 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+          <ul className="mb-6 grid grid-cols-1 gap-2 text-sm text-slate-300 sm:grid-cols-2">
             {BENEFITS.map((b) => (
               <li key={b} className="flex items-start gap-2">
                 <svg className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>

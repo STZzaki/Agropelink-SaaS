@@ -51,7 +51,8 @@ export function QuarterChart({ data, year }) {
       {empty ? (
         <p className="flex h-56 items-center justify-center rounded-xl border border-dashed border-white/10 px-6 text-center text-sm text-slate-400">Sin gastos registrados en {year}.</p>
       ) : table ? (
-        <table className="w-full text-left text-sm">
+        <div className="relative -mx-1 overflow-x-auto px-1" data-lenis-prevent>
+        <table className="w-full min-w-[30rem] text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-slate-400">
             <tr><th className="py-2 font-semibold">Trimestre</th>{SERIES.map((s) => <th key={s.key} className="py-2 text-right font-semibold">{s.label}</th>)}<th className="py-2 text-right font-semibold">Total</th></tr>
           </thead>
@@ -65,6 +66,7 @@ export function QuarterChart({ data, year }) {
             ))}
           </tbody>
         </table>
+        </div>
       ) : (
         <div className="h-60" role="img" aria-label={`Gasto por trimestre en ${year}`}>
           <ResponsiveContainer width="100%" height="100%">

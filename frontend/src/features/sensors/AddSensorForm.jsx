@@ -37,7 +37,7 @@ export default function AddSensorForm({ farmId, onCreated, onCancel }) {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="card-glass grid gap-4 p-5 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+    <form onSubmit={submit} noValidate className="card-glass grid grid-cols-1 gap-4 p-5 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
       <FormField id="sensor-name" label="Nombre" error={errors.name}>
         <input id="sensor-name" value={values.name} onChange={set('name')} maxLength={80} placeholder="Sonda sector norte" className={inputClass} aria-invalid={errors.name ? true : undefined} />
       </FormField>

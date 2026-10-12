@@ -128,16 +128,16 @@ export default function ForumPage() {
           <button
             type="button"
             onClick={openNewThread}
-            className="btn-primary h-12 px-6 text-sm"
+            className="btn-primary h-12 w-full px-6 text-sm sm:w-auto"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true"><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
             {status === 'authenticated' ? 'Nuevo tema' : 'Inicia sesión para publicar'}
           </button>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[16rem_1fr]">
+        <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[16rem_1fr]">
           <aside>
-            <nav aria-label="Categorías del foro" className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
+            <nav aria-label="Categorías del foro" className="relative flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible">
               {[{ id: '', label: 'Todos los temas' }, ...FORUM_CATEGORIES].map((c) => {
                 const active = category === c.id
                 return (

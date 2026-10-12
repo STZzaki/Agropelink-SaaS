@@ -82,7 +82,7 @@ function RowsEditor({ legend, rows, onChange, columns, blank, max, addLabel }) {
       {rows.length === 0 && <p className="mb-2 text-xs text-slate-500">Ninguno todavía.</p>}
       <ul className="space-y-2">
         {rows.map((row, i) => (
-          <li key={i} className="pop-in grid items-end gap-2 rounded-xl bg-white/[0.02] p-2 ring-1 ring-inset ring-white/[0.06] sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))_auto]" style={{ '--cols': columns.length }}>
+          <li key={i} className="pop-in grid grid-cols-1 items-end gap-2 rounded-xl bg-white/[0.02] p-2 ring-1 ring-inset ring-white/[0.06] sm:grid-cols-[repeat(var(--cols),minmax(0,1fr))_auto]" style={{ '--cols': columns.length }}>
             {columns.map((c) => (
               <div key={c.key}>
                 <label htmlFor={`${legend}-${i}-${c.key}`} className="mb-1 block text-[11px] font-medium text-slate-400">{c.label}</label>
@@ -114,7 +114,7 @@ function HarvestModePicker({ value, onChange }) {
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-medium text-slate-300">¿Cuántas cosechas tiene la finca?</legend>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {MODES.map((mode) => (
           <label key={mode.id} className="relative cursor-pointer">
             <input type="radio" name="harvest_mode" value={mode.id} checked={value === mode.id} onChange={() => onChange(mode.id)} className="peer sr-only" />
@@ -339,7 +339,7 @@ export default function FarmForm({ onCreated }) {
           <m.div key={step} {...SLIDE} className="space-y-5">
             {step === 0 && (
               <>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {field('name', 'Nombre de la granja', { maxLength: 150, placeholder: 'Finca Los Llanos' })}
                   {field('location', 'Ubicación', { maxLength: 255, placeholder: 'Níjar, Almería' })}
                 </div>
@@ -348,7 +348,7 @@ export default function FarmForm({ onCreated }) {
             )}
             {step === 1 && (
               <>
-                <div className="grid gap-4 sm:grid-cols-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                   {field('surface_ha', 'Superficie (ha)', { inputMode: 'decimal', placeholder: '3,5' })}
                   {field('length_m', 'Largo (m)', { inputMode: 'decimal', placeholder: '250' })}
                   {field('width_m', 'Ancho (m)', { inputMode: 'decimal', placeholder: '140' })}
@@ -430,7 +430,7 @@ export default function FarmForm({ onCreated }) {
             )}
             {step === 4 && (
               <>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {field('budget_total', 'Presupuesto anual (€)', { inputMode: 'decimal', placeholder: '50.000' })}
                   <div className="rounded-xl bg-white/[0.03] px-4 py-3 text-sm">
                     <p className="text-xs text-slate-500">Costes fijos iniciales</p>
@@ -454,7 +454,7 @@ export default function FarmForm({ onCreated }) {
                 />
                 <p className="text-xs text-slate-500">Se registran con fecha de hoy como costes fijos. Después podrás añadir costes variables desde Economía.</p>
                 {errors.fixed_costs && <p className="field-error text-xs font-medium text-accent-300">{errors.fixed_costs}</p>}
-                <dl className="grid gap-3 rounded-xl bg-white/[0.02] p-4 text-sm ring-1 ring-inset ring-white/[0.06] sm:grid-cols-2">
+                <dl className="grid grid-cols-1 gap-3 rounded-xl bg-white/[0.02] p-4 text-sm ring-1 ring-inset ring-white/[0.06] sm:grid-cols-2">
                   {[
                     ['Granja', `${v.name || '—'} · ${v.location || '—'}`],
                     ['Foto', photo ? photo.name : 'Sin foto'],

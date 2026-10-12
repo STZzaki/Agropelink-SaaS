@@ -65,7 +65,7 @@ export default function AIDocumentProcessor({ farms, campaigns = [], onFiled }) 
         )}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <Dropzone onFiles={handleFiles} disabled={farms.length === 0} />
         <div>
           <label htmlFor="ai-instructions" className="mb-1.5 block text-sm font-medium text-slate-300">Indicaciones para el agente <span className="font-normal text-slate-500">(opcional)</span></label>

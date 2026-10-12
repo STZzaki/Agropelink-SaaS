@@ -86,7 +86,7 @@ export default function CreateUserDialog({ open, onClose, onCreated }) {
         <FormField id="cu-email" label="Email" error={errors.email}>
           <input id="cu-email" type="email" maxLength={255} autoComplete="off" value={values.email} onChange={set('email')} className={inputClass} {...aria('email')} />
         </FormField>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField id="cu-birth_date" label="Fecha de nacimiento" error={errors.birth_date}>
             <input id="cu-birth_date" type="date" min="1900-01-01" max={latestAdultBirthDate()} value={values.birth_date} onChange={set('birth_date')} className={inputClass} {...aria('birth_date')} />
           </FormField>
