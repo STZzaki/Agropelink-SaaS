@@ -13,6 +13,21 @@ export const SENSOR_KINDS = [
 ]
 export const kindColor = (kind) => SENSOR_KINDS.find((k) => k.id === kind)?.color ?? '#7fd6c2'
 
+// Agnosticismo de hardware: pasarela/fabricante de origen de cada tipo de sensor. Etiquetas de DEMOSTRACIÓN (el modelo
+// de datos aún no guarda el fabricante real del sensor); cuando exista ese campo, mostrarlo en su lugar.
+const HARDWARE_SOURCES = {
+  soil_moisture: 'AgroLab Sensors',
+  soil_temperature: 'AgroLab Sensors',
+  conductivity: 'AgroLab Sensors',
+  ph: 'AgroLab Sensors',
+  air_temperature: 'AWS IoT Node',
+  air_humidity: 'AWS IoT Node',
+  co2: 'AWS IoT Node',
+  solar_radiation: 'LoRaWAN Gateway',
+  water_flow: 'Modbus Caudalímetro',
+}
+export const hardwareSource = (kind) => HARDWARE_SOURCES[kind] ?? 'Gateway MQTT'
+
 export const WINDOWS = [
   { hours: 6, label: '6 h' },
   { hours: 24, label: '24 h' },

@@ -4,7 +4,7 @@ import usePageMeta from '../hooks/usePageMeta.js'
 export default function NotFoundPage() {
   usePageMeta({
     title: 'Página no encontrada',
-    description: 'La página que buscas no existe en Agropelink. Vuelve al inicio o visita el foro de agricultores.',
+    description: 'La página que buscas no existe en Agropelink. Vuelve al inicio o accede a la plataforma.',
     noindex: true,
   })
 
@@ -19,8 +19,8 @@ export default function NotFoundPage() {
         <Link to="/" className="btn-primary h-12 px-7 text-sm">
           Volver al inicio
         </Link>
-        <Link to="/foro" className="btn-secondary h-12 px-7 text-sm">
-          Ir al foro
+        <Link to="/panel" className="btn-secondary h-12 px-7 text-sm">
+          Acceso Plataforma
         </Link>
       </div>
     </div>

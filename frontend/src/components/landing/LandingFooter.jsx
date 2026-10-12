@@ -26,7 +26,6 @@ export default function LandingFooter() {
             {LANDING_SECTIONS.map((s) => (
               <a key={s.id} href={`/#${s.id}`} className="text-slate-400 hover:text-white">{s.label}</a>
             ))}
-            <Link to="/foro" className="text-slate-400 hover:text-white">Foro</Link>
             <Link to="/panel" className="text-slate-400 hover:text-white">Acceso Plataforma</Link>
             <a href={SITE.instagramUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white">
               <InstagramIcon className="h-4 w-4" /> Instagram

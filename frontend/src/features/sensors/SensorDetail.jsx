@@ -96,7 +96,7 @@ export default function SensorDetail({ farmId, sensor, points, hours, demo, onCh
   }
 
   return (
-    <section aria-labelledby="sensor-detail-title" className="card-glass p-5 sm:p-6">
+    <section aria-labelledby="sensor-detail-title" className="card-glass card-glass-active p-5 sm:p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 id="sensor-detail-title" className="text-base font-semibold text-white sm:text-lg">{sensor.name}</h3>

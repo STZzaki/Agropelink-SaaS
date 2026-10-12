@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { MODERATION_WARNING_EVENT, UNAUTHORIZED_EVENT, authApi } from '../api.js'
+import { UNAUTHORIZED_EVENT, authApi } from '../api.js'
 
 /**
  * Estado de sesión. La sesión real vive en una cookie HttpOnly que JS no puede leer:
@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
 
   const register = useCallback((payload) => authApi.register(payload), [])
 
-  /** Vuelve a leer el perfil (rol, advertencias) desde el servidor. */
+  /** Vuelve a leer el perfil (rol, datos de la cuenta) desde el servidor. */
   const refresh = useCallback(async () => {
     try {
       setUser(await authApi.me())
@@ -54,12 +54,6 @@ export function AuthProvider({ children }) {
       // Un 401 ya lo gestiona el interceptor (UNAUTHORIZED_EVENT).
     }
   }, [])
-
-  // Advertencia emitida por el Auto-Mod: refrescar para mostrar el modal obligatorio.
-  useEffect(() => {
-    window.addEventListener(MODERATION_WARNING_EVENT, refresh)
-    return () => window.removeEventListener(MODERATION_WARNING_EVENT, refresh)
-  }, [refresh])
 
   const logout = useCallback(async () => {
     try {

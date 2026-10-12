@@ -35,6 +35,8 @@ export const LEGAL = {
 }
 
 export const LANDING_SECTIONS = [
+  { id: 'arquitectura', label: 'Arquitectura' },
+  { id: 'auditoria', label: 'Blockchain' },
   { id: 'nosotros', label: 'Nosotros' },
   { id: 'mercado', label: 'Mercado' },
   { id: 'normativa', label: 'Normativa' },

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import SensorChart from './SensorChart.jsx'
 import { ChartIcon, DropIcon, SparkIcon } from './icons.jsx'
-import { ArrowRight, Check } from 'lucide-react'
+import { ArrowRight, Check, Tractor, Users } from 'lucide-react'
 
 function AgentVisual() {
   const [decision, setDecision] = useState(null)
@@ -20,6 +20,21 @@ function AgentVisual() {
           <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
             <div><dt className="text-slate-400">Fecha</dt><dd className="font-medium text-slate-100">Mañana, 8:00</dd></div>
             <div><dt className="text-slate-400">Plazo seguridad</dt><dd className="font-medium text-slate-100">Según etiqueta</dd></div>
+          </dl>
+          {/* Recursos asignados por el planificador (cuadrilla y maquinaria) */}
+          <dl className="mt-3 space-y-1.5 border-t border-white/10 pt-3 text-xs">
+            <div className="flex items-center gap-2">
+              <dt className="inline-flex items-center gap-2 text-slate-400"><Users className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-hidden="true" />Cuadrilla asignada:</dt>
+              <dd className="font-medium text-slate-100">Equipo B (3 operarios)</dd>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <dt className="inline-flex items-center gap-2 text-slate-400"><Tractor className="h-3.5 w-3.5 shrink-0 text-emerald-300" aria-hidden="true" />Maquinaria:</dt>
+              <dd className="font-medium text-slate-100">Cuba 1000L</dd>
+              <dd className="pill-neon normal-case tracking-normal">
+                <span className="pill-neon-dot" aria-hidden="true" />
+                Sin colisión de turnos
+              </dd>
+            </div>
           </dl>
           {decision ? (
             <p className={`mt-3 rounded-lg px-3 py-2 text-center text-xs font-semibold ${decision === 'ok' ? 'bg-primary-500/20 text-primary-200' : 'bg-white/10 text-slate-300'}`}>

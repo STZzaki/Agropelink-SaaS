@@ -24,8 +24,6 @@ const api = axios.create({
 })
 
 export const UNAUTHORIZED_EVENT = 'agropelink:unauthorized'
-// El Auto-Mod bloqueó una publicación y emitió una advertencia oficial: hay que refrescar el perfil.
-export const MODERATION_WARNING_EVENT = 'agropelink:moderation-warning'
 
 // Sesión caducada o revocada en cualquier petición → el AuthProvider vuelve a estado anónimo.
 /**
@@ -56,9 +54,6 @@ api.interceptors.response.use(
     const suspended = status === 403 && typeof data?.detail === 'string' && data.detail.startsWith('Tu cuenta ha sido suspendida')
     if ((status === 401 && !url.startsWith('/auth/')) || suspended) {
       window.dispatchEvent(new Event(UNAUTHORIZED_EVENT))
-    }
-    if (status === 400 && url.startsWith('/forum/')) {
-      window.dispatchEvent(new Event(MODERATION_WARNING_EVENT))
     }
     return Promise.reject(error)
   },
@@ -215,45 +210,12 @@ export const authApi = {
   login: (payload) => api.post('/auth/login', payload).then((r) => asUser(r.data)),
   register: (payload) => api.post('/auth/register', payload).then((r) => r.data),
   logout: () => api.post('/auth/logout'),
-  moderation: (config) => api.get('/auth/me/moderation', config).then((r) => r.data),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }).then((r) => r.data),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }).then((r) => r.data),
 }
 
-export const forumApi = {
-  categories: (config) => api.get('/forum/categories', config).then((r) => r.data),
-  list: (params, config) => api.get('/forum/threads', { params, ...config }).then((r) => r.data),
-  get: (id, config) => api.get(`/forum/threads/${id}`, config).then((r) => r.data),
-  create: (payload) => api.post('/forum/threads', payload).then((r) => r.data),
-  reply: (id, payload) => api.post(`/forum/threads/${id}/replies`, payload).then((r) => r.data),
-  report: (payload) => api.post('/forum/reports', payload).then((r) => r.data),
-  /** Activa/quita «Me gusta» o una reacción (lista cerrada). Devuelve { counts, mine } de esa publicación. */
-  react: (payload) => api.put('/forum/reactions', payload).then((r) => r.data),
-  mentionable: (q, config) => api.get('/forum/mentionable', { params: { q }, ...config }).then((r) => r.data),
-  mentions: (config) => api.get('/forum/mentions', config).then((r) => r.data),
-  readMentions: () => api.post('/forum/mentions/read'),
-  /** Sube una imagen/vídeo con la aceptación legal expresa; devuelve { id, kind, url }. */
-  uploadMedia: (file, onProgress) => {
-    const form = new FormData()
-    form.append('file', file)
-    form.append('rights_accepted', 'true')
-    return api
-      .post('/forum/upload', form, { timeout: 180000, onUploadProgress: progressHandler(onProgress) })
-      .then((r) => r.data)
-  },
-  discardMedia: (id) => api.delete(`/forum/upload/${id}`),
-  /** Solo administradores: borrado forzoso de un tema (`thread`) o de una respuesta (`reply`). */
-  adminDelete: (id, kind) => api.delete(`/forum/posts/${id}/admin`, { params: { kind } }),
-  /** URL absoluta de un archivo multimedia (`media.url` es relativa a la API). */
-  mediaUrl: (relative) => `${baseURL}${relative}`,
-}
-
-// Límites de multimedia del foro (el backend los vuelve a imponer leyendo el stream).
-export const FORUM_MEDIA = {
-  maxFiles: 4,
-  image: { types: ['image/png', 'image/jpeg', 'image/webp'], maxBytes: 5 * 1024 * 1024 },
-  video: { types: ['video/mp4'], maxBytes: 15 * 1024 * 1024 },
-}
+// Límites de las fotos de granja (el backend los vuelve a imponer leyendo el stream).
+export const IMAGE_UPLOAD = { types: ['image/png', 'image/jpeg', 'image/webp'], maxBytes: 5 * 1024 * 1024 }
 
 export const applicationsApi = {
   mine: (config) => api.get('/applications/me', config).then((r) => r.data),
@@ -261,7 +223,6 @@ export const applicationsApi = {
 }
 
 export const usersApi = {
-  acknowledgeWarning: () => api.post('/users/acknowledge-warning').then((r) => asUser(r.data)),
   /** @param {{ name: string, birth_date: string, avatar: string | null }} profile */
   updateProfile: (profile) => api.put('/users/me', profile).then((r) => asUser(r.data)),
   /** Solo administradores: bloqueo inmediato de la cuenta. */
@@ -283,11 +244,6 @@ export const adminApi = {
   applications: (params, config) => api.get('/admin/applications', { params, ...config }).then((r) => r.data),
   approve: (id, payload = {}) => api.post(`/admin/applications/${id}/approve`, payload).then((r) => r.data),
   reject: (id, payload = {}) => api.post(`/admin/applications/${id}/reject`, payload).then((r) => r.data),
-  reports: (params, config) => api.get('/admin/reports', { params, ...config }).then((r) => r.data),
-  resolveReport: (id, payload) => api.post(`/admin/reports/${id}/resolve`, payload).then((r) => r.data),
-  removed: (config) => api.get('/admin/moderation/removed', config).then((r) => r.data),
-  events: (config) => api.get('/admin/moderation/events', config).then((r) => r.data),
-  restore: (kind, id) => api.post(`/admin/forum/${kind}/${id}/restore`),
   support: (params, config) => api.get('/admin/support', { params, ...config }).then((r) => r.data),
   closeTicket: (id) => api.post(`/admin/support/${id}/close`),
 }

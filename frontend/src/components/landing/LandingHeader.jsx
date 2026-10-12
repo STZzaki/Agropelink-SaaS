@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext.jsx'
 import { LANDING_SECTIONS, SITE } from '../../config/site.js'
 import UserMenu from '../auth/UserMenu.jsx'
@@ -14,12 +14,12 @@ function AuthActions({ compact = false }) {
   if (status === 'authenticated') return <UserMenu showPanelLink />
   return (
     <div className="flex items-center gap-2">
-      <Link to="/login" className={`rounded-full px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-white ${compact ? 'hidden sm:inline-flex' : ''}`}>
+      <Link to="/login" className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/5 hover:text-white ${compact ? 'hidden sm:inline-flex' : ''}`}>
         Iniciar sesión
       </Link>
       <Link
         to="/register"
-        className="hidden rounded-full border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/30 hover:bg-white/5 md:inline-flex"
+        className="hidden whitespace-nowrap rounded-full border border-white/15 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:border-white/30 hover:bg-white/5 md:inline-flex"
       >
         Registrarse
       </Link>
@@ -66,21 +66,11 @@ export default function LandingHeader() {
           <ul className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] px-2 py-1.5">
             {LANDING_SECTIONS.map((s) => (
               <li key={s.id}>
-                <a href={sectionHref(pathname, s.id)} className="rounded-full px-3.5 py-1.5 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
+                <a href={sectionHref(pathname, s.id)} className="whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-medium text-slate-300 transition-colors 2xl:px-3.5 hover:bg-white/5 hover:text-white">
                   {s.label}
                 </a>
               </li>
             ))}
-            <li>
-              <NavLink
-                to="/foro"
-                className={({ isActive }) =>
-                  `rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`
-                }
-              >
-                Foro
-              </NavLink>
-            </li>
           </ul>
         </nav>
 
@@ -90,14 +80,14 @@ export default function LandingHeader() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Instagram de Agropelink (${SITE.instagramHandle})`}
-            className="hidden h-10 w-10 items-center justify-center rounded-full text-slate-300 shadow-surface-sm transition-[color,background-color,transform] duration-200 ease-out hover:bg-white/[0.06] hover:text-white active:scale-[0.96] lg:inline-flex"
+            className="hidden h-10 w-10 items-center justify-center rounded-full text-slate-300 shadow-surface-sm transition-[color,background-color,transform] duration-200 ease-out hover:bg-white/[0.06] hover:text-white active:scale-[0.96] 2xl:inline-flex"
           >
             <InstagramIcon />
           </a>
           <AuthActions compact />
           <Link
             to="/panel"
-            className="btn-primary group hidden px-5 py-2.5 text-sm lg:inline-flex"
+            className="btn-primary group hidden whitespace-nowrap px-5 py-2.5 text-sm lg:inline-flex"
           >
             Acceso Plataforma
             <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -131,11 +121,6 @@ export default function LandingHeader() {
                 </a>
               </li>
             ))}
-            <li>
-              <Link to="/foro" className="block rounded-xl px-4 py-3 text-base font-medium text-slate-200 hover:bg-white/5">
-                Foro de agricultores
-              </Link>
-            </li>
           </ul>
           {status === 'anonymous' && (
             <div className="mt-4 grid grid-cols-2 gap-3">

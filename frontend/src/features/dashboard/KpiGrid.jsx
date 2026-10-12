@@ -2,7 +2,7 @@ import { fmt, fmtEuro, fmtLiters } from './chartTheme.js'
 
 function Kpi({ label, value, hint, children }) {
   return (
-    <div className="card-glass flex flex-col p-5">
+    <div className="card-glass flex flex-col p-5 transition-[border-color,box-shadow] duration-300 hover:card-glass-active">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-2 text-2xl font-semibold tabular-nums tracking-tight text-white sm:text-3xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
@@ -23,7 +23,7 @@ function Delta({ current, previous }) {
   )
 }
 
-/** Tarjetas KPI estilo cristal (sin backdrop-filter). Solo datos reales de la cuenta. */
+/** Tarjetas KPI de cristal oscuro (se iluminan en verde al pasar el ratón). Solo datos reales de la cuenta. */
 export default function KpiGrid({ kpis }) {
   const budgetPct = kpis.budget_total > 0 ? Math.min(100, (kpis.budget_spent / kpis.budget_total) * 100) : null
   return (

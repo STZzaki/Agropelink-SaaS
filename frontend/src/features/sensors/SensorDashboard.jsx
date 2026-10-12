@@ -20,11 +20,8 @@ function LiveBadge({ updatedAt, failed, demo }) {
     return <span className="inline-flex items-center gap-2 text-xs text-accent-200"><span className="h-2 w-2 rounded-full bg-accent-400" aria-hidden="true" />Sin conexión · reintentando</span>
   }
   return (
-    <span className="inline-flex items-center gap-2 text-xs text-slate-400">
-      <span className="relative flex h-2 w-2" aria-hidden="true">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-400 opacity-60 motion-off:hidden" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-400" />
-      </span>
+    <span className="pill-neon normal-case tracking-normal">
+      <span className="pill-neon-dot animate-pulse" aria-hidden="true" />
       {updatedAt ? `En directo · ${updatedAt.toLocaleTimeString('es-ES')}` : 'Conectando…'}
     </span>
   )

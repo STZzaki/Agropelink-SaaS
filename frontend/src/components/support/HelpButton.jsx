@@ -6,7 +6,7 @@ import { inputClass, optionClass } from '../ui/FormField.jsx'
 
 const CATEGORIES = [
   { id: 'technical', label: 'Soporte técnico' },
-  { id: 'account', label: 'Mi cuenta' },
+  { id: 'account', label: 'AgroProfile B2B' },
   { id: 'legal', label: 'Legal y privacidad' },
   { id: 'other', label: 'Otro' },
 ]

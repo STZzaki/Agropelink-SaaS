@@ -6,7 +6,7 @@ import Avatar from '../ui/Avatar.jsx'
 
 const ITEM = 'block rounded-lg px-3 py-2 text-sm text-slate-200 transition-colors duration-300 hover:bg-white/[0.06] hover:text-white'
 
-/** Avatar con menú desplegable (panel, cuenta, foro y cerrar sesión). Funciona sobre fondos oscuros. */
+/** Avatar con menú desplegable (panel, AgroProfile B2B y cerrar sesión). Funciona sobre fondos oscuros. */
 export default function UserMenu({ showPanelLink = true }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -72,10 +72,7 @@ export default function UserMenu({ showPanelLink = true }) {
               </Link>
             )}
             <Link role="menuitem" to="/cuenta" onClick={close} className={ITEM}>
-              Mi cuenta
-            </Link>
-            <Link role="menuitem" to="/foro" onClick={close} className={ITEM}>
-              Foro de agricultores
+              AgroProfile B2B
             </Link>
             <button
               role="menuitem"

@@ -59,11 +59,11 @@ export default function AccountSettings() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-      <PageHeader eyebrow="Mi cuenta" title="Ajustes de la cuenta" subtitle="Gestiona tu perfil público en Agropelink y la seguridad de tu acceso." />
+      <PageHeader eyebrow="Cuenta" title="AgroProfile B2B" subtitle="Gestiona tu perfil profesional en Agropelink y la seguridad de tu acceso." />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <form onSubmit={handleSubmit} noValidate>
-          <Card title="Perfil">
+          <Card title="AgroProfile B2B">
             <div className="mb-6 flex items-center gap-4">
               <Avatar avatar={values.avatar} name={values.name} size="xl" />
               <div className="min-w-0">

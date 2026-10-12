@@ -1,7 +1,8 @@
 import AboutSection from '../components/landing/AboutSection.jsx'
+import ArchitectureSection from '../components/landing/ArchitectureSection.jsx'
+import BlockchainAuditSection from '../components/landing/BlockchainAuditSection.jsx'
 import ContactSection from '../components/landing/ContactSection.jsx'
 import ScrollWorld from '../components/landing/ScrollWorld.jsx'
-import ForumPromo from '../components/landing/ForumPromo.jsx'
 import Hero from '../components/landing/Hero.jsx'
 import InstagramFeed from '../components/landing/InstagramFeed.jsx'
 import LandingFooter from '../components/landing/LandingFooter.jsx'
@@ -33,11 +34,12 @@ export default function Landing() {
       {/* Cada sección con su límite de errores: un dato o widget de terceros que falle no tumba la página. */}
       <main id="main" className="relative z-10">
         <ErrorBoundary name="Hero"><Hero /></ErrorBoundary>
+        <ErrorBoundary name="ArchitectureSection"><ArchitectureSection /></ErrorBoundary>
+        <ErrorBoundary name="BlockchainAuditSection"><BlockchainAuditSection /></ErrorBoundary>
         <ErrorBoundary name="AboutSection"><AboutSection /></ErrorBoundary>
         <ErrorBoundary name="VideoShowcase"><VideoShowcase /></ErrorBoundary>
         <ErrorBoundary name="LiveDataSection"><LiveDataSection /></ErrorBoundary>
         <ErrorBoundary name="RegulationRadar"><RegulationRadar /></ErrorBoundary>
-        <ErrorBoundary name="ForumPromo"><ForumPromo /></ErrorBoundary>
         <ErrorBoundary name="TeamSection"><TeamSection /></ErrorBoundary>
         <ErrorBoundary name="InstagramFeed"><InstagramFeed /></ErrorBoundary>
         <ErrorBoundary name="ContactSection"><ContactSection /></ErrorBoundary>

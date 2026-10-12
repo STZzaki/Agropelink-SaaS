@@ -1,6 +1,6 @@
 import { AnimatePresence, m } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
-import { FORUM_MEDIA, farmsApi, getErrorMessage } from '../../api.js'
+import { IMAGE_UPLOAD, farmsApi, getErrorMessage } from '../../api.js'
 import Alert from '../../components/ui/Alert.jsx'
 import Button from '../../components/ui/Button.jsx'
 import FormField, { inputClass, optionClass } from '../../components/ui/FormField.jsx'
@@ -151,7 +151,7 @@ function PhotoPicker({ file, onChange, error }) {
           <p className="text-xs text-slate-500">PNG, JPEG o WEBP · máx. 5 MB. Se eliminan los metadatos (incluida la ubicación GPS).</p>
         </div>
       </div>
-      <input ref={inputRef} type="file" accept={FORUM_MEDIA.image.types.join(',')} className="sr-only" tabIndex={-1} onChange={(e) => { onChange(e.target.files?.[0] ?? null); e.target.value = '' }} />
+      <input ref={inputRef} type="file" accept={IMAGE_UPLOAD.types.join(',')} className="sr-only" tabIndex={-1} onChange={(e) => { onChange(e.target.files?.[0] ?? null); e.target.value = '' }} />
       {error && <p className="field-error mt-1.5 text-xs font-medium text-accent-300">{error}</p>}
     </div>
   )
@@ -162,8 +162,8 @@ function validateStep(step, v, photo) {
   if (step === 0) {
     if (!v.name.trim()) e.name = 'Indica el nombre de la granja.'
     if (!v.location.trim()) e.location = 'Indica la ubicación.'
-    if (photo && !FORUM_MEDIA.image.types.includes(photo.type)) e.photo = 'Formato no permitido.'
-    else if (photo && photo.size > FORUM_MEDIA.image.maxBytes) e.photo = 'La foto supera 5 MB.'
+    if (photo && !IMAGE_UPLOAD.types.includes(photo.type)) e.photo = 'Formato no permitido.'
+    else if (photo && photo.size > IMAGE_UPLOAD.maxBytes) e.photo = 'La foto supera 5 MB.'
   }
   if (step === 1) {
     for (const k of ['surface_ha', 'length_m', 'width_m']) {
@@ -221,7 +221,7 @@ function toPayload(v) {
 
 /**
  * Alta de granja en 5 pasos. Cada paso se valida antes de avanzar; el backend vuelve a validar todo (Pydantic).
- * La foto se sube al final, una vez creada la granja, por el mismo pipeline seguro que el foro.
+ * La foto se sube al final, una vez creada la granja, por el pipeline seguro de subidas (tipo y tamaño validados).
  */
 export default function FarmForm({ onCreated }) {
   const [step, setStep] = useState(0)

@@ -11,6 +11,7 @@ import { InputsSpendChart, WaterMoistureChart } from '../features/dashboard/Anal
 import KpiGrid from '../features/dashboard/KpiGrid.jsx'
 import ReadingQuickForm from '../features/dashboard/ReadingQuickForm.jsx'
 import SensorDashboard from '../features/sensors/SensorDashboard.jsx'
+import BlockchainCertifier from '../features/blockchain/BlockchainCertifier.jsx'
 import AgentBriefing from '../features/dashboard/AgentBriefing.jsx'
 import { demoOverview, fmt } from '../features/dashboard/chartTheme.js'
 import useApi from '../hooks/useApi.js'
@@ -65,7 +66,7 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <PageHeader eyebrow="Panel de control" title="Tu explotación" subtitle="Sensores en directo, clima y carburante; después, riego, insumos y presupuesto de tus fincas con tus propios datos." />
+      <PageHeader eyebrow="Farm OS B2B · Agnóstico de hardware" title="Hub de Telemetría IoT" subtitle="Telemetría de sensores en directo, clima y carburante; después, riego, insumos y presupuesto de tus fincas con tus propios datos." />
 
       {/* 0. Lo importante de hoy, según el agente (local). */}
       <AgentBriefing />
@@ -74,7 +75,11 @@ export default function DashboardPage() {
       {farms.loading ? (
         <div className="mb-12"><LoadingBlock label="Cargando fincas…" /></div>
       ) : !farms.error && (
-        <SensorDashboard farms={farmList} />
+        <>
+          <SensorDashboard farms={farmList} />
+          {/* 1b. Certificación Web3 de la telemetría (demo: hash real, anclaje en cadena simulado). */}
+          <BlockchainCertifier farms={farmList} />
+        </>
       )}
 
       {/* 2. Resumen y analítica histórica */}
@@ -134,7 +139,7 @@ export default function DashboardPage() {
 
       <section aria-labelledby="farms-title" className="mt-10">
         <div className="mb-4 flex items-center justify-between">
-          <h2 id="farms-title" className="text-lg font-semibold text-white">Mis granjas</h2>
+          <h2 id="farms-title" className="text-lg font-semibold text-white">Fincas conectadas</h2>
           <Link to="/tasks" className="inline-flex items-center gap-1 text-sm font-medium text-secondary-300 transition-colors duration-300 hover:text-secondary-200">Ver tareas <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
         </div>
         {farms.loading ? (

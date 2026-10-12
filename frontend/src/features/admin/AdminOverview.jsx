@@ -47,7 +47,7 @@ export default function AdminOverview({ metrics, onNavigate }) {
         <Stat label="Usuarios activos" value={m.active_users} hint={`${nf.format(m.users_total)} cuentas · ${nf.format(m.new_users_30d)} nuevas en 30 días`} onClick={() => onNavigate('usuarios')} />
         <Stat label="Agricultores" value={m.users_by_role.farmer} hint={`${nf.format(m.users_by_role.user)} usuarios estándar · ${nf.format(m.users_by_role.admin)} admin.`} tone="text-primary-300" onClick={() => onNavigate('usuarios')} />
         <Stat label="Fincas registradas" value={m.farms} hint={`${nf.format(m.documents)} documentos archivados`} onClick={() => onNavigate('fincas')} />
-        <Stat label="Pendiente de revisar" value={m.pending_applications + m.open_reports + m.open_support_tickets} hint={`${m.pending_applications} altas · ${m.open_reports} denuncias · ${m.open_support_tickets} tickets`} tone="text-accent-300" onClick={() => onNavigate(m.pending_applications ? 'altas' : m.open_reports ? 'moderacion' : 'soporte')} />
+        <Stat label="Pendiente de revisar" value={m.pending_applications + m.open_support_tickets} hint={`${m.pending_applications} altas · ${m.open_support_tickets} tickets`} tone="text-accent-300" onClick={() => onNavigate(m.pending_applications ? 'altas' : 'soporte')} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -64,11 +64,11 @@ export default function AdminOverview({ metrics, onNavigate }) {
           <Bars rows={DOC_TYPES.map((t) => ({ label: t.label, value: m.documents_by_type[t.id] ?? 0 })).filter((r) => r.value > 0)} />
           {m.documents === 0 && <p className="text-sm text-slate-400">Aún no hay documentos archivados.</p>}
         </Card>
-        <Card title="Comunidad">
+        <Card title="Cuentas">
           <dl className="grid grid-cols-3 gap-4 text-center">
             {[
-              ['Temas', m.forum_threads],
-              ['Respuestas', m.forum_replies],
+              ['Agricultores', m.users_by_role.farmer],
+              ['Usuarios', m.users_by_role.user],
               ['Cuentas bloqueadas', m.banned_users],
             ].map(([label, value]) => (
               <div key={label}>

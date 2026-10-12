@@ -14,11 +14,9 @@ export const ROLE_LABELS = {
   user: 'Usuario',
 }
 
-/** Primera vista tras iniciar sesión. Los usuarios estándar entran directamente al foro. */
+/** Primera vista tras iniciar sesión: el panel principal de cada rol. */
 export function homeForRole(role) {
-  if (role === ROLES.ADMIN) return '/admin'
-  if (role === ROLES.FARMER) return '/dashboard'
-  return '/foro'
+  return panelForRole(role)
 }
 
 /** Panel principal de cada rol (enlace "Mi panel"). */

@@ -4,11 +4,10 @@ import { useAuth } from '../../auth/AuthContext.jsx'
 import UserMenu from '../auth/UserMenu.jsx'
 
 const FARMER_LINKS = [
-  { to: '/dashboard', label: 'Resumen' },
+  { to: '/dashboard', label: 'Hub de Telemetría IoT' },
   { to: '/economia', label: 'Economía' },
   { to: '/tasks', label: 'Tareas' },
   { to: '/documents', label: 'Documentos' },
-  { to: '/foro', label: 'Foro' },
 ]
 
 // La navegación refleja el rol; el acceso real lo decide la API en cada petición.
@@ -16,9 +15,8 @@ const NAV_BY_ROLE = {
   admin: [{ to: '/admin', label: 'Administración' }, ...FARMER_LINKS],
   farmer: FARMER_LINKS,
   user: [
-    { to: '/foro', label: 'Foro' },
     { to: '/portal', label: 'Mi portal' },
-    { to: '/cuenta', label: 'Mi cuenta' },
+    { to: '/cuenta', label: 'AgroProfile B2B' },
   ],
 }
 

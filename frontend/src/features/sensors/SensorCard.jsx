@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Check, WifiOff } from 'lucide-react'
-import { ago, formatValue, kindColor, sensorStatus } from './sensorMeta.js'
+import { ago, formatValue, hardwareSource, kindColor, sensorStatus } from './sensorMeta.js'
 
 // Estado con icono + texto (nunca solo color). Verde = en rango, tierra = fuera de rango, gris = sin señal.
 const STATUS = {
@@ -23,17 +23,30 @@ function Sparkline({ points, color }) {
   )
 }
 
+/**
+ * Origen del hardware + punto de recepción. El punto «late» (animate-pulse) solo si el sensor está enviando datos
+ * ahora mismo; sin señal queda gris y quieto: el indicador nunca miente sobre el estado real de la telemetría.
+ */
+function HardwareBadge({ kind, live }) {
+  return (
+    <span className={`pill-neon mt-2 max-w-full ${live ? '' : '!border-white/10 !text-slate-400 [text-shadow:none]'}`}>
+      <span className={live ? 'pill-neon-dot animate-pulse' : 'h-1.5 w-1.5 shrink-0 rounded-full bg-slate-500'} aria-hidden="true" />
+      <span className="truncate">{hardwareSource(kind)}</span>
+      <span className="sr-only">{live ? ', recibiendo datos en tiempo real' : ', sin datos recientes'}</span>
+    </span>
+  )
+}
+
 export default function SensorCard({ sensor, points, selected, onSelect, now }) {
-  const status = STATUS[sensorStatus(sensor, now)]
+  const statusKey = sensorStatus(sensor, now)
+  const status = STATUS[statusKey]
   const color = kindColor(sensor.kind)
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`group flex w-full flex-col rounded-2xl p-4 text-left transition-[background-color,box-shadow,transform] duration-300 ease-out hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-secondary-300 ${
-        selected ? 'bg-white/[0.07] shadow-surface-hover' : 'bg-white/[0.03] shadow-surface-sm hover:bg-white/[0.05]'
-      }`}
+      className={`card-inset group flex w-full flex-col p-4 text-left hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60 ${selected ? 'card-inset-active' : ''}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -42,6 +55,7 @@ export default function SensorCard({ sensor, points, selected, onSelect, now }) 
             <span className="truncate">{sensor.label}</span>
           </p>
           <p className="mt-0.5 truncate text-sm font-semibold text-white" title={sensor.name}>{sensor.name}</p>
+          <HardwareBadge kind={sensor.kind} live={statusKey !== 'offline'} />
         </div>
         <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset ${status.cls}`}>
           <status.icon className="h-3 w-3" aria-hidden="true" strokeWidth={2.5} />
