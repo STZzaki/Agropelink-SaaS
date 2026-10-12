@@ -39,12 +39,13 @@ function spriteStyle({ cx, cy }) {
 
 export const avatarById = (id) => AVATARS.find((a) => a.id === id) ?? null
 
-export const initials = (name = '') =>
-  name
+export const initials = (name) =>
+  String(name ?? '')
+    .trim()
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
+    .map((n) => n.charAt(0).toUpperCase())
     .join('') || '?'
 
 const SIZES = { sm: 'h-8 w-8 text-xs', md: 'h-9 w-9 text-xs', lg: 'h-16 w-16 text-lg', xl: 'h-24 w-24 text-2xl' }

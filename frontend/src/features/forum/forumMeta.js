@@ -18,7 +18,9 @@ const UNITS = [
 ]
 
 export function timeAgo(iso) {
-  const seconds = (new Date(iso).getTime() - Date.now()) / 1000
+  const time = iso ? new Date(iso).getTime() : NaN
+  if (!Number.isFinite(time)) return '' // fecha ausente: Intl.RelativeTimeFormat lanzaría RangeError con NaN
+  const seconds = (time - Date.now()) / 1000
   for (const [unit, s] of UNITS) {
     if (Math.abs(seconds) >= s) return rtf.format(Math.round(seconds / s), unit)
   }
@@ -26,7 +28,7 @@ export function timeAgo(iso) {
 }
 
 export const formatDate = (iso) =>
-  new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  !iso || Number.isNaN(new Date(iso).getTime()) ? '' : new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 // Reacciones con emoji (lista cerrada, la misma que acepta el servidor). «Me gusta» va aparte con su icono.
 export const REACTIONS = [
@@ -44,10 +46,12 @@ const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** Trocea el texto para resaltar las menciones confirmadas por el servidor (`@Nombre`). React escapa el resto. */
 export function splitMentions(text, mentions = []) {
-  if (!mentions.length) return [{ text }]
-  const names = [...mentions].sort((a, b) => b.name.length - a.name.length)
+  const safe = String(text ?? '')
+  const valid = (mentions ?? []).filter((m) => typeof m?.name === 'string' && m.name)
+  if (!valid.length) return [{ text: safe }]
+  const names = [...valid].sort((a, b) => b.name.length - a.name.length)
   const re = new RegExp(`(@(?:${names.map((m) => escapeRegExp(m.name)).join('|')}))`, 'giu')
-  return text.split(re).filter(Boolean).map((part) => {
+  return safe.split(re).filter(Boolean).map((part) => {
     const hit = names.find((m) => part.toLocaleLowerCase('es') === `@${m.name}`.toLocaleLowerCase('es'))
     return hit ? { text: part, mention: hit } : { text: part }
   })

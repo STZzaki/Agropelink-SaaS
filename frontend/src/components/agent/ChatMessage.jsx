@@ -21,7 +21,7 @@ function DocOutcome({ message }) {
 
 /** Negritas «**texto**» del agente como <strong>. Todo es texto: React lo escapa (nunca HTML del modelo). */
 function RichText({ text }) {
-  return text.split(/(\*\*[^*\n]+\*\*)/g).map((part, i) =>
+  return String(text ?? '').split(/(\*\*[^*\n]+\*\*)/g).map((part, i) =>
     part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={i} className="font-semibold text-white">{part.slice(2, -2)}</strong> : part,
   )
 }

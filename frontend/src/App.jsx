@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext.jsx'
 import RequireAuth, { FullScreenLoader, RoleHome } from './auth/RequireAuth.jsx'
 import { ROLES } from './auth/roles.js'
+import RouteErrorBoundary from './components/RouteErrorBoundary.jsx'
 import ScrollManager from './components/ScrollManager.jsx'
 import AnalyticsTracker from './consent/AnalyticsTracker.jsx'
 import { ConsentProvider } from './consent/ConsentContext.jsx'
@@ -39,6 +40,7 @@ export default function App() {
         <AuthProvider>
           <ScrollManager />
           <AnalyticsTracker />
+          <RouteErrorBoundary>
           <Suspense fallback={<FullScreenLoader />}>
             <Routes>
               {/* Públicas */}
@@ -84,6 +86,7 @@ export default function App() {
               </Route>
             </Routes>
           </Suspense>
+          </RouteErrorBoundary>
           <CookieBanner />
           <WarningGate />
         </AuthProvider>

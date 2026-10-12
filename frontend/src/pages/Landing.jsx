@@ -11,6 +11,7 @@ import RegulationRadar from '../components/landing/RegulationRadar.jsx'
 import StickyCta from '../components/landing/StickyCta.jsx'
 import TeamSection from '../components/landing/TeamSection.jsx'
 import VideoShowcase from '../components/landing/VideoShowcase.jsx'
+import ErrorBoundary from '../components/ui/ErrorBoundary.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
 
 export default function Landing() {
@@ -29,16 +30,17 @@ export default function Landing() {
       {/* Fondo 3D "Scroll World" (diferido); mientras carga o sin WebGL, las ondas ligeras. */}
       <ScrollWorld />
       <LandingHeader />
+      {/* Cada sección con su límite de errores: un dato o widget de terceros que falle no tumba la página. */}
       <main id="main" className="relative z-10">
-        <Hero />
-        <AboutSection />
-        <VideoShowcase />
-        <LiveDataSection />
-        <RegulationRadar />
-        <ForumPromo />
-        <TeamSection />
-        <InstagramFeed />
-        <ContactSection />
+        <ErrorBoundary name="Hero"><Hero /></ErrorBoundary>
+        <ErrorBoundary name="AboutSection"><AboutSection /></ErrorBoundary>
+        <ErrorBoundary name="VideoShowcase"><VideoShowcase /></ErrorBoundary>
+        <ErrorBoundary name="LiveDataSection"><LiveDataSection /></ErrorBoundary>
+        <ErrorBoundary name="RegulationRadar"><RegulationRadar /></ErrorBoundary>
+        <ErrorBoundary name="ForumPromo"><ForumPromo /></ErrorBoundary>
+        <ErrorBoundary name="TeamSection"><TeamSection /></ErrorBoundary>
+        <ErrorBoundary name="InstagramFeed"><InstagramFeed /></ErrorBoundary>
+        <ErrorBoundary name="ContactSection"><ContactSection /></ErrorBoundary>
       </main>
       <LandingFooter />
       <StickyCta />

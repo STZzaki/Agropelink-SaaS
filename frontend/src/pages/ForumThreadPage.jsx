@@ -13,6 +13,8 @@ import usePageMeta from '../hooks/usePageMeta.js'
 import { ArrowLeft, Flag } from 'lucide-react'
 
 /** Texto plano con las menciones confirmadas por el servidor resaltadas (React escapa todo lo demás). */
+const UNKNOWN_AUTHOR = { id: 0, name: 'Usuario', avatar: null }
+
 function Body({ text, mentions }) {
   return (
     <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-300 sm:text-base">
@@ -23,7 +25,8 @@ function Body({ text, mentions }) {
   )
 }
 
-function Post({ author, date, body, mentions, highlight, onReport, media, adminTools, reactionBar }) {
+function Post({ author: rawAuthor, date, body, mentions, highlight, onReport, media, adminTools, reactionBar }) {
+  const author = rawAuthor ?? UNKNOWN_AUTHOR // cuenta eliminada o dato incompleto: nunca rompe la página
   return (
     <article className={`rounded-2xl border p-5 sm:p-6 ${highlight ? 'border-secondary-400/25 bg-secondary-500/[0.04]' : 'border-white/10 bg-white/[0.02]'}`}>
       {/* Nombre AL LADO del avatar, en la misma línea que la fecha. */}
@@ -63,10 +66,10 @@ export default function ForumThreadPage() {
   // Se puede denunciar cualquier publicación ajena (con sesión iniciada).
   // Visible en toda publicación ajena; sin sesión lleva al login y vuelve a este tema.
   const navigate = useNavigate()
-  const reportable = (author) => author.id !== user?.id
+  const reportable = (author) => author?.id !== user?.id
   const isAdmin = user?.role === 'admin'
   const tools = (kind, postId, author, onDeleted) =>
-    isAdmin ? <AdminPostTools kind={kind} postId={postId} author={author} isSelf={author.id === user.id} onDeleted={onDeleted} /> : null
+    isAdmin ? <AdminPostTools kind={kind} postId={postId} author={author ?? UNKNOWN_AUTHOR} isSelf={author?.id === user?.id} onDeleted={onDeleted} /> : null
   const openReport = (target) =>
     status === 'authenticated' ? setReportTarget(target) : navigate('/login', { state: { from: location.pathname } })
 
@@ -158,7 +161,7 @@ export default function ForumThreadPage() {
                 media={thread.media}
                 reactionBar={reactionBar(null, thread.reactions)}
                 highlight
-                onReport={reportable(thread.author) ? () => openReport({ threadId: thread.id, author: thread.author.name }) : undefined}
+                onReport={reportable(thread.author) ? () => openReport({ threadId: thread.id, author: thread.author?.name ?? 'Usuario' }) : undefined}
                 adminTools={tools('thread', thread.id, thread.author, () => navigate('/foro', { replace: true }))}
               />
               <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 sm:p-6">
@@ -187,7 +190,7 @@ export default function ForumThreadPage() {
                   mentions={r.mentions}
                   media={r.media}
                   reactionBar={reactionBar(r.id, r.reactions)}
-                  onReport={reportable(r.author) ? () => openReport({ threadId: thread.id, replyId: r.id, author: r.author.name }) : undefined}
+                  onReport={reportable(r.author) ? () => openReport({ threadId: thread.id, replyId: r.id, author: r.author?.name ?? 'Usuario' }) : undefined}
                   adminTools={tools('reply', r.id, r.author, () => setThread((t) => ({ ...t, replies: t.replies.filter((x) => x.id !== r.id) })))}
                 />
               ))}

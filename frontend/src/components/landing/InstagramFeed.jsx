@@ -3,6 +3,7 @@ import { SITE } from '../../config/site.js'
 import { useConsent } from '../../consent/ConsentContext.jsx'
 import Reveal from './Reveal.jsx'
 import { InstagramIcon } from './icons.jsx'
+import ErrorBoundary from '../ui/ErrorBoundary.jsx'
 
 // Widget de Instagram de Elfsight (configurado en el panel de Elfsight, sin claves en el frontend).
 const ELFSIGHT_SCRIPT_SRC = 'https://elfsightcdn.com/platform.js'
@@ -20,6 +21,12 @@ function loadElfsightScript() {
   script.referrerPolicy = 'strict-origin-when-cross-origin'
   document.body.appendChild(script)
   return script
+}
+
+/** ¿El error viene del widget de Elfsight (su script o su styled-components interno)? */
+function isElfsightError(source = '', message = '', stack = '') {
+  const text = `${source} ${message} ${stack}`.toLowerCase()
+  return text.includes('elfsight') || text.includes('styled-components') || text.includes('instagram')
 }
 
 function FeedSkeleton() {
@@ -79,39 +86,76 @@ function ConsentGate() {
   )
 }
 
+/**
+ * Feed de Elfsight aislado de React: React solo pinta un contenedor vacío (`hostRef`) y el nodo del widget se crea
+ * y se retira a mano. Así React nunca reconcilia el DOM que manipula el tercero, y cualquier fallo de su script
+ * (red, bloqueador, error interno de styled-components en producción…) solo cambia esta sección al enlace de
+ * respaldo: nunca tira la página principal.
+ */
 function ElfsightFeed() {
-  const widgetRef = useRef(null)
+  const hostRef = useRef(null)
   const [state, setState] = useState('loading') // loading | ready | unavailable
 
   useEffect(() => {
-    const container = widgetRef.current
-    if (!container) return
+    const host = hostRef.current
+    if (!host) return undefined
+    const fail = () => setState('unavailable')
 
-    const script = loadElfsightScript()
-    const onScriptError = () => setState('unavailable')
-    script?.addEventListener('error', onScriptError)
-
-    // Elfsight inyecta el feed dentro del contenedor: en cuanto aparece contenido, se oculta el esqueleto.
-    const markReady = () => container.childElementCount > 0 && setState('ready')
-    const observer = new MutationObserver(markReady)
-    observer.observe(container, { childList: true, subtree: true })
-    markReady()
-
-    // El widget es lazy: Elfsight solo carga cuando el contenedor entra en pantalla, así que el plazo
-    // de espera empieza a contar desde ese momento.
+    let widget = null
+    let script = null
+    let observer = null
+    let visibility = null
     let timer
-    const visibility = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return
-      visibility.disconnect()
-      timer = setTimeout(() => setState((s) => (s === 'loading' ? 'unavailable' : s)), FALLBACK_AFTER_MS)
-    })
-    visibility.observe(container)
+    // Errores globales del script de terceros (no llegan a React ni a un try/catch: son asíncronos).
+    const onWindowError = (event) => {
+      if (isElfsightError(event?.filename, event?.message, event?.error?.stack)) fail()
+    }
+    const onRejection = (event) => {
+      const reason = event?.reason
+      if (isElfsightError('', reason?.message ?? String(reason ?? ''), reason?.stack)) fail()
+    }
+    window.addEventListener('error', onWindowError)
+    window.addEventListener('unhandledrejection', onRejection)
+
+    try {
+      widget = document.createElement('div')
+      widget.className = ELFSIGHT_APP_CLASS
+      widget.setAttribute('data-elfsight-app-lazy', '')
+      host.appendChild(widget)
+
+      script = loadElfsightScript()
+      script?.addEventListener('error', fail)
+
+      // Elfsight inyecta el feed dentro del contenedor: en cuanto aparece contenido, se oculta el esqueleto.
+      const markReady = () => widget.childElementCount > 0 && setState((s) => (s === 'unavailable' ? s : 'ready'))
+      observer = new MutationObserver(markReady)
+      observer.observe(widget, { childList: true, subtree: true })
+      markReady()
+
+      // El widget es lazy: solo carga al entrar en pantalla; el plazo de espera cuenta desde ese momento.
+      visibility = new IntersectionObserver(([entry]) => {
+        if (!entry?.isIntersecting) return
+        visibility.disconnect()
+        timer = setTimeout(() => setState((s) => (s === 'loading' ? 'unavailable' : s)), FALLBACK_AFTER_MS)
+      })
+      visibility.observe(host)
+    } catch (err) {
+      console.error('[Instagram] No se pudo iniciar el feed:', err?.name, err?.message)
+      fail()
+    }
 
     return () => {
-      observer.disconnect()
-      visibility.disconnect()
+      window.removeEventListener('error', onWindowError)
+      window.removeEventListener('unhandledrejection', onRejection)
+      observer?.disconnect()
+      visibility?.disconnect()
       clearTimeout(timer)
-      script?.removeEventListener('error', onScriptError)
+      script?.removeEventListener('error', fail)
+      try {
+        widget?.remove() // el nodo del tercero lo retiramos nosotros, no React
+      } catch {
+        /* nada que limpiar */
+      }
     }
   }, [])
 
@@ -119,9 +163,9 @@ function ElfsightFeed() {
     <>
       {state === 'loading' && <FeedSkeleton />}
       {state === 'unavailable' && <FeedUnavailable />}
-      {/* Contenedor exacto de Elfsight, siempre montado y visible (vacío mide 0 px): su carga diferida
-          depende de que entre en pantalla. El esqueleto queda justo encima mientras tanto. */}
-      <div ref={widgetRef} className={ELFSIGHT_APP_CLASS} data-elfsight-app-lazy />
+      {/* Contenedor siempre montado (vacío mide 0 px) para que la carga diferida de Elfsight detecte su entrada en
+          pantalla. Si el widget falla, se oculta para que no quede a medias junto al enlace de respaldo. */}
+      <div ref={hostRef} hidden={state === 'unavailable'} />
     </>
   )
 }
@@ -162,7 +206,9 @@ export default function InstagramFeed() {
 
         <Reveal delay={100} className="mt-12">
           {/* Contenido de terceros: el script de Elfsight no se descarga sin consentimiento expreso. */}
-          {consent?.external ? <ElfsightFeed /> : <ConsentGate />}
+          <ErrorBoundary name="instagram" fallback={<FeedUnavailable />}>
+            {consent?.external ? <ElfsightFeed /> : <ConsentGate />}
+          </ErrorBoundary>
         </Reveal>
       </div>
     </section>

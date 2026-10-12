@@ -31,8 +31,8 @@ function ThreadCard({ thread }) {
           <p className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-slate-500">
             {/* Avatar y nombre en la misma línea */}
             <span className="inline-flex items-center gap-1.5">
-              <Avatar avatar={thread.author.avatar} name={thread.author.name} className="!h-6 !w-6 text-[10px]" />
-              <span className="font-medium text-slate-300">{thread.author.name}</span>
+              <Avatar avatar={thread.author?.avatar} name={thread.author?.name} className="!h-6 !w-6 text-[10px]" />
+              <span className="font-medium text-slate-300">{thread.author?.name ?? 'Usuario'}</span>
             </span>
             · {timeAgo(thread.created_at)}
             {thread.last_activity_at !== thread.created_at && <> · última actividad {timeAgo(thread.last_activity_at)}</>}

@@ -39,7 +39,7 @@ export const WEEKDAYS = [
 
 export const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 export const fromISO = (iso) => {
-  const [y, m, d] = iso.split('-').map(Number)
+  const [y, m, d] = String(iso ?? '').split('-').map(Number) // fecha ausente → Invalid Date, sin romper
   return new Date(y, m - 1, d)
 }
 export const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)

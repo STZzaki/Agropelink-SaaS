@@ -10,8 +10,11 @@ import { MOTION_OK, gsap, useGSAP } from '../../lib/gsap.js'
  */
 export default function CountUp({ value, decimals = 0, from, duration = 1.1, prefix = '', suffix = '', className = '' }) {
   const ref = useRef(null)
+  // Un dato ausente o no numérico (p. ej. una API de terceros que no lo envía) se muestra como «—» en vez de romper.
   const format = (n) =>
-    `${prefix}${n.toLocaleString('es-ES', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`
+    typeof n === 'number' && Number.isFinite(n)
+      ? `${prefix}${n.toLocaleString('es-ES', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`
+      : '—'
 
   useGSAP(
     () => {

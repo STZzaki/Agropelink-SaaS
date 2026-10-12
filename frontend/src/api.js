@@ -28,8 +28,27 @@ export const UNAUTHORIZED_EVENT = 'agropelink:unauthorized'
 export const MODERATION_WARNING_EVENT = 'agropelink:moderation-warning'
 
 // Sesión caducada o revocada en cualquier petición → el AuthProvider vuelve a estado anónimo.
+/**
+ * La API siempre responde JSON (o el archivo pedido en descargas). Si llega HTML con un 200, la petición no ha
+ * llegado al backend: proxy sin regla para /api, backend caído, «fallback» de la SPA que devuelve index.html…
+ * Se convierte en error para que cada pantalla muestre su aviso en lugar de romperse con datos inesperados.
+ */
+export class ApiUnavailableError extends Error {
+  constructor(config) {
+    super('El servidor de datos no está disponible ahora mismo. Inténtalo de nuevo en unos minutos.')
+    this.name = 'ApiUnavailableError'
+    this.config = config
+  }
+}
+
+const isHtmlInsteadOfApi = (response) => {
+  const type = String(response.headers?.['content-type'] ?? '')
+  const raw = typeof response.data === 'string' && /^\s*<(!doctype|html)/i.test(response.data)
+  return response.config?.responseType !== 'blob' && (type.includes('text/html') || raw)
+}
+
 api.interceptors.response.use(
-  (response) => response,
+  (response) => (isHtmlInsteadOfApi(response) ? Promise.reject(new ApiUnavailableError(response.config)) : response),
   (error) => {
     const url = error.config?.url ?? ''
     const { status, data } = error.response ?? {}
@@ -48,7 +67,8 @@ api.interceptors.response.use(
 /** Convierte un error de Axios/FastAPI en un mensaje legible para el usuario. */
 export function getErrorMessage(error) {
   if (axios.isCancel(error)) return null
-  if (!error.response) {
+  if (error instanceof ApiUnavailableError || error instanceof InvalidProfileError) return error.message
+  if (!error?.response) {
     return error.code === 'ECONNABORTED'
       ? 'El servidor tardó demasiado en responder.'
       : 'No se pudo conectar con el servidor.'
@@ -241,9 +261,9 @@ export const applicationsApi = {
 }
 
 export const usersApi = {
-  acknowledgeWarning: () => api.post('/users/acknowledge-warning').then((r) => r.data),
+  acknowledgeWarning: () => api.post('/users/acknowledge-warning').then((r) => asUser(r.data)),
   /** @param {{ name: string, birth_date: string, avatar: string | null }} profile */
-  updateProfile: (profile) => api.put('/users/me', profile).then((r) => r.data),
+  updateProfile: (profile) => api.put('/users/me', profile).then((r) => asUser(r.data)),
   /** Solo administradores: bloqueo inmediato de la cuenta. */
   ban: (id, reason) => api.put(`/users/${id}/ban`, reason ? { reason } : {}).then((r) => r.data),
 }

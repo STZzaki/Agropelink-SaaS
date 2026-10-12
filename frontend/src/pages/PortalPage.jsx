@@ -51,7 +51,7 @@ export default function PortalPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <PageHeader title={`Hola, ${user.name.split(' ')[0]}`} subtitle="Tu portal Agropelink: meteorología, carburante y la comunidad de agricultores." />
+      <PageHeader title={user?.name ? `Hola, ${user.name.split(' ')[0]}` : 'Hola'} subtitle="Tu portal Agropelink: meteorología, carburante y la comunidad de agricultores." />
 
       {/* Los widgets públicos usan el estilo oscuro de la landing. */}
       <section aria-label="Datos en directo" className="grid grid-cols-1 gap-6 rounded-3xl bg-slate-950 p-4 text-slate-200 sm:p-6 lg:grid-cols-2">

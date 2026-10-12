@@ -31,7 +31,7 @@ const TEAM = [
   },
 ]
 
-const initials = (name) => name.split(' ').map((n) => n[0]).slice(0, 2).join('')
+const initials = (name) => String(name ?? '').split(' ').filter(Boolean).map((n) => n[0]).slice(0, 2).join('')
 
 function Avatar({ member }) {
   // 'loading' → 'loaded' | 'error'. Mientras carga (o si falla) se ven las iniciales: sin saltos de layout.

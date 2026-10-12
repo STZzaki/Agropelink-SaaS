@@ -67,8 +67,10 @@ export default function FuelWidget() {
   }, [])
 
   const badge = data ? STATUS_BADGE[data.status] ?? STATUS_BADGE.estimate : null
-  const diffVsSpain = data?.spain_avg ? data.region_avg - data.spain_avg : null
-  const hasRange = data?.region_min && data?.region_max
+  const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null) // dato numérico válido o null
+  const regionAvg = num(data?.region_avg)
+  const diffVsSpain = regionAvg !== null && num(data?.spain_avg) !== null ? regionAvg - data.spain_avg : null
+  const hasRange = regionAvg !== null && num(data?.region_min) !== null && num(data?.region_max) !== null
   const rangePos = hasRange ? ((data.region_avg - data.region_min) / (data.region_max - data.region_min || 1)) * 100 : 0
 
   return (
@@ -97,12 +99,12 @@ export default function FuelWidget() {
             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${badge.cls}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} aria-hidden="true" />
               {badge.label}
-              {data.source_updated_at && <span className="font-normal opacity-80">· {data.source_updated_at.split(' ')[0]}</span>}
+              {data.source_updated_at && <span className="font-normal opacity-80">· {String(data.source_updated_at).split(' ')[0]}</span>}
             </span>
 
             <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
               <p className="text-4xl font-semibold tabular-nums text-white">
-                <CountUp value={data.region_avg} decimals={3} from={data.region_avg * 0.92} />
+                <CountUp value={regionAvg} decimals={3} from={regionAvg !== null ? regionAvg * 0.92 : undefined} />
                 <span className="ml-1 text-base font-normal text-slate-400">€/l</span>
               </p>
               <Trend value={data.region_weekly_change_pct} />

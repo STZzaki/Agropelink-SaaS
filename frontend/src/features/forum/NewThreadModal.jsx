@@ -14,7 +14,7 @@ export const RIGHTS_TEXT =
   'Confirmo que tengo los derechos de este archivo, asumo toda la responsabilidad legal sobre su contenido y acepto las condiciones de publicación.'
 
 function parseTags(raw) {
-  return [...new Set(raw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean))]
+  return [...new Set(String(raw ?? '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean))]
 }
 
 function validate(v) {
