@@ -204,11 +204,22 @@ function CameraRig({ progress }) {
         tl.to(rig.current, { x: shot.pos[0], y: shot.pos[1], z: shot.pos[2], lx: shot.look[0], ly: shot.look[1], lz: shot.look[2], fov: shot.fov })
       })
     })
-    // Las secciones cargan imágenes/vídeos y cambian la altura de la página: recalcular el recorrido.
-    const refresh = () => ScrollTrigger.refresh()
-    window.addEventListener('load', refresh, { once: true })
+    // Las secciones cargan datos, imágenes, vídeos y widgets DESPUÉS de crearse el recorrido (el 3D se monta
+    // diferido, normalmente tras `load`): si la página crece y no se recalcula, `end` queda corto y la cámara llega
+    // al final antes de tiempo y se queda quieta el resto del scroll. Se recalcula cuando cambia la altura real.
+    let lastHeight = document.documentElement.scrollHeight
+    let timer = 0
+    const observer = new ResizeObserver(() => {
+      const h = document.documentElement.scrollHeight
+      if (h === lastHeight) return
+      lastHeight = h
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => ScrollTrigger.refresh(), 200) // agrupa ráfagas (varias imágenes a la vez)
+    })
+    observer.observe(document.body)
     return () => {
-      window.removeEventListener('load', refresh)
+      observer.disconnect()
+      window.clearTimeout(timer)
       ctx.revert()
     }
   }, [invalidate, progress])
