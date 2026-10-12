@@ -41,7 +41,7 @@ def sync_schema(engine: Engine) -> None:
                 server_default = getattr(column.server_default, "arg", None)
                 if isinstance(server_default, str):
                     default = " DEFAULT '" + server_default.replace("'", "''") + "'"
-                conn.execute(text(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {ddl_type}{default}'))
+                conn.execute(text(f'ALTER TABLE `{table.name}` ADD COLUMN `{column.name}` {ddl_type}{default}'))
                 logger.warning("Esquema: añadida columna %s.%s", table.name, column.name)
             for index in table.indexes:
                 index.create(conn, checkfirst=True)
