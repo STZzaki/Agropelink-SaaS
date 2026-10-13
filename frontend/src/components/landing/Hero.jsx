@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import HeroCarousel from './HeroCarousel.jsx'
 import { ArrowRightIcon } from './icons.jsx'
 
-const HIGHLIGHTS = ['Sensorización IoT', 'IA agronómica supervisada', 'Datos de lonja y carburante']
+const HIGHLIGHTS = ['Agnóstico de hardware', 'Modelado MBSE de tu explotación', 'Márgenes en tiempo real']
 
 export default function Hero() {
   return (
@@ -21,14 +21,15 @@ export default function Hero() {
             AgTech · Co-fundado por la Unión Europea
           </p>
           <h1 className="mt-4 text-[2rem] font-semibold leading-[1.08] tracking-tight text-white sm:mt-6 sm:text-6xl lg:text-7xl">
-            El campo, digitalizado.{' '}
+            El Empleado Perfecto que nunca duerme.{' '}
             <span className="bg-gradient-to-r from-primary-300 via-secondary-300 to-secondary-400 bg-clip-text text-transparent">
-              Cada decisión, optimizada con IA.
+              Tu explotación, unificada por IA.
             </span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-slate-400 sm:mt-6 sm:text-lg">
-            Agropelink conecta sensores, datos de mercado e inteligencia artificial en una sola plataforma para que
-            tu explotación ahorre agua, anticipe labores y venda con más margen.
+            Agropelink no es solo una app de sensores. Somos un Farm OS agnóstico que se conecta a cualquier dispositivo,
+            entiende tus procesos mediante MBSE, optimiza tus márgenes en tiempo real y actúa de forma autónoma mientras tú
+            descansas.
           </p>
 
           <div className="mt-6 flex flex-col justify-center gap-3 sm:mt-9 sm:flex-row">

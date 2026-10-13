@@ -357,6 +357,9 @@ dialog.dialog-animated[data-closing]::backdrop {
 .data-pulse--in {
   stroke: #5eead4; /* secondary claro: ingesta */
 }
+.data-pulse--brain {
+  stroke: #34d399; /* esmeralda: el cerebro (IA + MBSE) */
+}
 .data-pulse--out {
   stroke: #a3e635; /* verde lima: salida procesada */
 }

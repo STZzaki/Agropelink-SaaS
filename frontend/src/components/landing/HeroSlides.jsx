@@ -9,13 +9,13 @@ function AgentVisual() {
   return (
     <div className="space-y-3 rounded-2xl bg-slate-950/60 p-4 shadow-surface-sm sm:p-6">
       <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-primary-600 px-4 py-2.5 text-sm text-white">
-        Programa el tratamiento contra mosca blanca en el sector 2
+        Las trampas del sector 2 han saltado. ¿Qué hacemos?
       </div>
       <div className="max-w-[95%] rounded-2xl rounded-bl-sm bg-white/[0.04] p-4 shadow-surface-sm text-sm text-slate-200">
         <p className="text-[11px] font-semibold text-secondary-300">Agropelink AI</p>
-        <p className="mt-1">Las trampas cromáticas superan el umbral esta semana. He preparado la labor:</p>
+        <p className="mt-1">Umbral de mosca blanca superado. Activo tu protocolo estándar de plagas (modelo MBSE) con los recursos libres:</p>
         <div className="mt-3 rounded-xl border border-accent-400/30 bg-accent-500/10 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-200">Confirmación requerida</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-accent-200">Protocolo SOP-PLAGAS-02 · Confirmación requerida</p>
           <p className="mt-1 text-base font-semibold text-white">Tratamiento mosca blanca · Sector 2</p>
           <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
             <div><dt className="text-slate-400">Fecha</dt><dd className="font-medium text-slate-100">Mañana, 8:00</dd></div>
@@ -114,26 +114,26 @@ export const HERO_SLIDES = [
   {
     id: 'agua',
     icon: DropIcon,
-    tag: 'Telemetría de precisión',
-    title: 'Optimización hídrica en cada sector',
-    text: 'Sondas de humedad, temperatura y conductividad conectadas que ajustan cada riego a la necesidad real del cultivo.',
+    tag: 'Gestión predictiva',
+    title: 'Detecta, predice y adjudica antes de que falle',
+    text: 'El sistema detecta patrones en tus datos, predice problemas antes de que ocurran, planifica el mantenimiento preventivo y adjudica cada tarea automáticamente según los recursos disponibles y el historial de tu finca.',
     kpis: [
-      { value: '3', label: 'variables por sonda' },
-      { value: '15 min', label: 'frecuencia de lectura' },
-      { value: '24/7', label: 'alertas de umbral' },
+      { value: '24/7', label: 'detección de patrones' },
+      { value: 'Preventivo', label: 'mantenimiento planificado' },
+      { value: 'Auto', label: 'adjudicación de tareas' },
     ],
     Visual: SensorChart,
   },
   {
     id: 'agente',
     icon: SparkIcon,
-    tag: 'IA con Human-in-the-Loop',
-    title: 'Un asistente agronómico que propone, tú decides',
-    text: 'Agropelink AI interpreta tus datos y prepara labores y tratamientos. Ninguna acción se ejecuta sin tu aprobación explícita.',
+    tag: 'Modelado MBSE',
+    title: 'Aprende cómo trabajas y lo convierte en protocolo',
+    text: 'Mediante MBSE, Agropelink aprende la metodología de tu explotación —recursos, maquinaria y operarios— y crea protocolos estandarizados, incluidos los de emergencia, listos para activarse cuando hagan falta.',
     kpis: [
-      { value: '100 %', label: 'acciones con aprobación' },
+      { value: 'MBSE', label: 'modelo vivo de tu finca' },
+      { value: 'SOP', label: 'protocolos de emergencia' },
       { value: 'HITL', label: 'tú apruebas cada labor' },
-      { value: 'ES', label: 'en tu idioma, en el campo' },
     ],
     Visual: AgentVisual,
   },
@@ -141,12 +141,12 @@ export const HERO_SLIDES = [
     id: 'costes',
     icon: ChartIcon,
     tag: 'Control económico',
-    title: 'Rentabilidad real frente a la lonja',
-    text: 'Cruza tus costes de explotación con las cotizaciones en origen para decidir cuándo cortar y a quién vender.',
+    title: 'Ratios, previsión de gastos y márgenes reales',
+    text: 'Controla tus ratios de coste, anticipa los gastos futuros con gráficas de previsión y calcula tu margen real frente a la lonja para decidir cuándo cortar y a quién vender.',
     kpis: [
-      { value: '€/kg', label: 'coste real por cultivo' },
-      { value: '5', label: 'hortícolas de referencia' },
-      { value: 'Semanal', label: 'tendencia de precios' },
+      { value: '€/kg', label: 'margen real vs. lonja' },
+      { value: 'Ratios', label: 'control de costes' },
+      { value: 'Previsión', label: 'gastos futuros' },
     ],
     Visual: CostVisual,
   },

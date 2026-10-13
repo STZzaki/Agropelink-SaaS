@@ -12,14 +12,15 @@ import RegulationRadar from '../components/landing/RegulationRadar.jsx'
 import StickyCta from '../components/landing/StickyCta.jsx'
 import TeamSection from '../components/landing/TeamSection.jsx'
 import VideoShowcase from '../components/landing/VideoShowcase.jsx'
+import VideoShowcasePlaceholder from '../components/landing/VideoShowcasePlaceholder.jsx'
 import ErrorBoundary from '../components/ui/ErrorBoundary.jsx'
 import usePageMeta from '../hooks/usePageMeta.js'
 
 export default function Landing() {
   usePageMeta({
-    title: 'Agropelink — Digitalización, sensores e IA para el campo',
+    title: 'Agropelink — Farm OS con IA: el empleado perfecto para tu explotación',
     description:
-      'Plataforma AgTech para explotaciones agrícolas: sensorización de riego, asistente agronómico con IA supervisada, cotizaciones de lonja, gasóleo B y normativa. Co-fundado por la Unión Europea.',
+      'Farm OS agnóstico de hardware: unifica sensores de cualquier marca, APIs y tus datos, modela tu explotación con MBSE, optimiza márgenes en tiempo real y certifica la trazabilidad. Co-fundado por la Unión Europea.',
     path: '/',
   })
 
@@ -34,6 +35,7 @@ export default function Landing() {
       {/* Cada sección con su límite de errores: un dato o widget de terceros que falle no tumba la página. */}
       <main id="main" className="relative z-10">
         <ErrorBoundary name="Hero"><Hero /></ErrorBoundary>
+        <ErrorBoundary name="VideoShowcasePlaceholder"><VideoShowcasePlaceholder /></ErrorBoundary>
         <ErrorBoundary name="ArchitectureSection"><ArchitectureSection /></ErrorBoundary>
         <ErrorBoundary name="BlockchainAuditSection"><BlockchainAuditSection /></ErrorBoundary>
         <ErrorBoundary name="AboutSection"><AboutSection /></ErrorBoundary>
